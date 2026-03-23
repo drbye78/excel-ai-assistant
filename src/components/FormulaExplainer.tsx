@@ -19,7 +19,7 @@ import {
   Spinner,
   SpinnerSize
 } from "@fluentui/react";
-import { tokens } from "@fluentui/react-theme";
+import { logger } from "../utils/logger";
 
 interface FormulaExplainerProps {
   formula?: string;
@@ -84,7 +84,7 @@ export const FormulaExplainer: React.FC<FormulaExplainerProps> = ({
       const result = explainFormula(formulaToAnalyze);
       setExplanation(result);
     } catch (err) {
-      setError(`Failed to analyze formula: ${err.message}`);
+      setError(`Failed to analyze formula: ${(err as Error).message}`);
     } finally {
       setIsLoading(false);
     }
@@ -342,7 +342,7 @@ async function navigateToCell(address: string): Promise<void> {
       await context.sync();
     });
   } catch (e) {
-    console.error("Failed to navigate to cell:", e);
+    logger.error("Failed to navigate to cell", undefined, e as Error);
   }
 }
 

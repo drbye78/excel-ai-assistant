@@ -2,6 +2,7 @@
 // Provides inline documentation and guidance
 
 import React, { useState } from 'react';
+import { logger } from '../utils/logger';
 import {
   Panel,
   PanelType,
@@ -337,12 +338,12 @@ export const HelpPanel: React.FC<HelpPanelProps> = ({
             <IconButton
               iconProps={{ iconName: 'ThumbUp' }}
               title="Yes, this was helpful"
-              onClick={() => console.log('Helpful feedback')}
+              onClick={() => logger.info('User feedback: helpful')}
             />
             <IconButton
               iconProps={{ iconName: 'ThumbDown' }}
               title="No, this wasn't helpful"
-              onClick={() => console.log('Not helpful feedback')}
+              onClick={() => logger.info('User feedback: not helpful')}
             />
           </Stack>
         </Stack>

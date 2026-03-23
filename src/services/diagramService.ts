@@ -583,34 +583,24 @@ export class DiagramService {
 
   /**
    * Group multiple shapes
+   * @throws {Error} Shape grouping is not supported in this Office.js version
    */
   async groupShapes(shapeNames: string[], worksheetName?: string): Promise<string> {
-    return Excel.run(async (context) => {
-      const worksheet = worksheetName
-        ? context.workbook.worksheets.getItem(worksheetName)
-        : context.workbook.getActiveWorksheet();
-
-      // Note: Grouping may require specific Office.js API support
-      // This is a placeholder implementation
-
-      await context.sync();
-      return `Group_${Date.now()}`;
-    });
+    throw new Error(
+      'Shape grouping is not supported in this Office.js version. ' +
+      'Please use Excel desktop to group shapes manually.'
+    );
   }
 
   /**
    * Ungroup a shape group
+   * @throws {Error} Shape ungrouping is not supported in this Office.js version
    */
   async ungroupShapes(groupName: string, worksheetName?: string): Promise<void> {
-    return Excel.run(async (context) => {
-      const worksheet = worksheetName
-        ? context.workbook.worksheets.getItem(worksheetName)
-        : context.workbook.getActiveWorksheet();
-
-      // Note: Ungrouping may require specific Office.js API support
-
-      await context.sync();
-    });
+    throw new Error(
+      'Shape ungrouping is not supported in this Office.js version. ' +
+      'Please use Excel desktop to ungroup shapes manually.'
+    );
   }
 }
 

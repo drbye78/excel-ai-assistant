@@ -6,6 +6,7 @@
  */
 
 import { AIAction } from '@/types';
+import { logger } from '../utils/logger';
 
 export interface UndoableOperation {
   id: string;
@@ -429,7 +430,7 @@ export class UndoRedoService {
       }));
       this.maxHistorySize = parsed.maxHistorySize || 50;
     } catch (error) {
-      console.error('Failed to deserialize undo/redo state:', error);
+      logger.error('Failed to deserialize undo/redo state', undefined, error as Error);
     }
   }
 }

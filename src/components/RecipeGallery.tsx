@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import { logger } from "../utils/logger";
 import {
   Stack,
   Text,
@@ -114,7 +115,7 @@ export const RecipeGallery: React.FC<RecipeGalleryProps> = ({
       setRecipes(results);
       applyFilters(results);
     } catch (error) {
-      console.error("Failed to load recipes:", error);
+      logger.error("Failed to load recipes", undefined, error as Error);
     } finally {
       setIsLoading(false);
     }

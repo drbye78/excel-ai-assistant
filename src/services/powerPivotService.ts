@@ -185,45 +185,6 @@ export class PowerPivotService {
   }
 
   /**
-   * Check data model health
-   */
-  async checkDataModelHealth(): Promise<DataModelHealth> {
-    const issues: DataModelIssue[] = [];
-    const recommendations: string[] = [];
-
-    try {
-      // Check for common issues
-      // 1. Bi-directional relationships
-      // 2. Many-to-many without bridge table
-      // 3. Circular references
-      // 4. Measures without format strings
-      // 5. Large tables without partitioning
-
-      // This is a placeholder - real implementation would analyze the actual data model
-      
-      return {
-        status: issues.length === 0 ? 'healthy' : issues.some(i => i.type === 'error') ? 'critical' : 'warning',
-        issues,
-        recommendations: [
-          'Consider creating indexes on frequently filtered columns',
-          'Review measure formats for consistency',
-          'Check for unused columns to reduce model size',
-        ],
-      };
-    } catch (error) {
-      return {
-        status: 'critical',
-        issues: [{
-          type: 'error',
-          category: 'structure',
-          message: 'Failed to analyze data model: ' + error,
-        }],
-        recommendations: [],
-      };
-    }
-  }
-
-  /**
    * Get table relationships
    */
   async getRelationships(): Promise<PowerPivotRelationship[]> {
@@ -314,72 +275,92 @@ export class PowerPivotService {
 
   /**
    * Create or update a measure
+   * @throws {Error} Power Pivot measure creation is not supported via Office.js
    */
   async createMeasure(measure: PowerPivotMeasure): Promise<boolean> {
-    try {
-      notificationManager.info(`Creating measure: ${measure.name}`);
-      // Real implementation would use Office.js API to create measure
-      return true;
-    } catch (error) {
-      notificationManager.error('Failed to create measure: ' + error);
-      return false;
-    }
+    throw new Error(
+      'Power Pivot measure creation is not supported via Office.js. ' +
+      'Please use the Power Pivot window in Excel desktop to create measures.'
+    );
   }
 
   /**
    * Delete a measure
+   * @throws {Error} Power Pivot measure deletion is not supported via Office.js
    */
   async deleteMeasure(tableName: string, measureName: string): Promise<boolean> {
-    try {
-      notificationManager.info(`Deleting measure: ${measureName}`);
-      // Real implementation would use Office.js API
-      return true;
-    } catch (error) {
-      notificationManager.error('Failed to delete measure: ' + error);
-      return false;
-    }
+    throw new Error(
+      'Power Pivot measure deletion is not supported via Office.js. ' +
+      'Please use the Power Pivot window in Excel desktop to delete measures.'
+    );
   }
 
   /**
-   * Refresh data model
+   * Check data model health
+   * Analyzes actual workbook structure and returns data-driven recommendations
    */
-  async refreshDataModel(): Promise<boolean> {
+  async checkDataModelHealth(): Promise<DataModelHealth> {
+    const issues: DataModelIssue[] = [];
+    const recommendations: string[] = [];
+
     try {
-      // @ts-ignore - Office.js types
-      await Excel.run(async (context: Excel.RequestContext) => {
-        const refresh = context.workbook.connections;
-        refresh.refreshAll();
+      return await Excel.run(async (context) => {
+        // Check table count
+        const tables = context.workbook.tables;
+        tables.load('count');
         await context.sync();
-      });
-      notificationManager.success('Data model refresh initiated');
-      return true;
-    } catch (error) {
-      notificationManager.error('Failed to refresh data model: ' + error);
-      return false;
-    }
-  }
 
-  /**
-   * Export measure definitions
-   */
-  async exportMeasures(): Promise<string> {
-    const measures = await this.getMeasures();
-    
-    let exportText = '-- Power Pivot Measures Export\n\n';
-    
-    for (const measure of measures) {
-      exportText += `-- Table: ${measure.table}\n`;
-      exportText += `MEASURE ${measure.table}[${measure.name}] = ${measure.expression}\n`;
-      if (measure.formatString) {
-        exportText += `    FORMAT: "${measure.formatString}"\n`;
-      }
-      if (measure.description) {
-        exportText += `    DESCRIPTION: "${measure.description}"\n`;
-      }
-      exportText += '\n';
+        if (tables.count === 0) {
+          issues.push({
+            type: 'warning',
+            category: 'structure',
+            message: 'No tables found in workbook',
+            suggestion: 'Convert your data ranges to Excel Tables for better performance'
+          });
+        }
+
+        // Check named ranges (potential measures)
+        const names = context.workbook.names;
+        names.load('items');
+        await context.sync();
+
+        if (names.items.length > 100) {
+          issues.push({
+            type: 'warning',
+            category: 'performance',
+            message: `Large number of named ranges (${names.items.length})`,
+            suggestion: 'Consider consolidating named ranges to improve performance'
+          });
+        }
+
+        // Generate data-driven recommendations
+        if (tables.count > 5) {
+          recommendations.push('Consider creating relationships between tables in the Data Model');
+        }
+        
+        if (names.items.length > 0) {
+          recommendations.push('Review named ranges for potential DAX measure conversion');
+        }
+
+        return {
+          status: issues.some(i => i.type === 'error') ? 'critical' 
+                : issues.some(i => i.type === 'warning') ? 'warning' 
+                : 'healthy',
+          issues,
+          recommendations,
+        };
+      });
+    } catch (error) {
+      return {
+        status: 'critical',
+        issues: [{
+          type: 'error',
+          category: 'structure',
+          message: `Failed to analyze data model: ${(error as Error).message}`,
+        }],
+        recommendations: ['Check if workbook is corrupted or protected'],
+      };
     }
-    
-    return exportText;
   }
 }
 

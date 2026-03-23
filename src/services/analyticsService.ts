@@ -6,7 +6,8 @@
  * and performance metrics for enterprise analytics.
  */
 
-import { EnterpriseAuthService, UserRole } from './enterpriseAuth';
+import { enterpriseAuth, UserRole } from './enterpriseAuth';
+import { logger } from '../utils/logger';
 
 // Analytics event types
 export type AnalyticsEventType = 
@@ -108,6 +109,8 @@ class AnalyticsService {
   private startTime: Date;
   private currentUserId: string = '';
   private isInitialized: boolean = false;
+  private cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
+  private trackingTimeouts: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
   // Callbacks for real-time updates
   private eventListeners: Map<AnalyticsEventType, Set<(event: AnalyticsEvent) => void>> = new Map();
@@ -128,7 +131,7 @@ class AnalyticsService {
     if (this.isInitialized) return;
 
     // Get current user from auth service
-    const user = EnterpriseAuthService.getCurrentUser();
+    const user = enterpriseAuth.getCurrentUser();
     if (user) {
       this.currentUserId = user.id;
     }
@@ -142,10 +145,33 @@ class AnalyticsService {
       platform: navigator.platform 
     });
 
-    // Setup periodic cleanup
-    setInterval(() => this.cleanupOldEvents(), 60000); // Every minute
+    // Setup periodic cleanup with proper interval management
+    this.cleanupIntervalId = setInterval(() => this.cleanupOldEvents(), 60000); // Every minute
 
     this.isInitialized = true;
+  }
+
+  /**
+   * Cleanup service resources
+   * Call this when the service is no longer needed
+   */
+  dispose(): void {
+    // Clear cleanup interval
+    if (this.cleanupIntervalId) {
+      clearInterval(this.cleanupIntervalId);
+      this.cleanupIntervalId = null;
+    }
+
+    // Clear all tracking timeouts
+    this.trackingTimeouts.forEach((timeout) => {
+      clearTimeout(timeout);
+    });
+    this.trackingTimeouts.clear();
+
+    // Clear event listeners
+    this.eventListeners.clear();
+
+    this.isInitialized = false;
   }
 
   private generateSessionId(): string {
@@ -171,7 +197,7 @@ class AnalyticsService {
       id: this.generateEventId(),
       type,
       userId: this.currentUserId || 'anonymous',
-      userRole: EnterpriseAuthService.getCurrentUser()?.role || 'user',
+      userRole: enterpriseAuth.getCurrentUser()?.role || 'standard_user',
       sessionId: this.sessionId,
       timestamp: new Date(),
       feature,
@@ -195,7 +221,7 @@ class AnalyticsService {
     this.notifyListeners(type, event);
 
     // Send to server if enterprise user
-    if (EnterpriseAuthService.isEnterpriseUser()) {
+    if (enterpriseAuth.isAuthenticated()) {
       this.sendToServer(event);
     }
   }
@@ -205,10 +231,19 @@ class AnalyticsService {
    */
   startTracking(feature: string): string {
     const trackingId = `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    (globalThis as any)[trackingId] = {
+    const global = globalThis as { [key: string]: unknown };
+    global[trackingId] = {
       feature,
       startTime: performance.now()
     };
+
+    // Set a timeout to auto-cleanup stale tracking entries (5 minutes)
+    const timeout = setTimeout(() => {
+      delete global[trackingId];
+      this.trackingTimeouts.delete(trackingId);
+    }, 5 * 60 * 1000);
+
+    this.trackingTimeouts.set(trackingId, timeout);
     return trackingId;
   }
 
@@ -221,13 +256,20 @@ class AnalyticsService {
     success: boolean = true,
     metadata?: Record<string, any>
   ): void {
-    const tracking = (globalThis as any)[trackingId];
+    const global = globalThis as { [key: string]: unknown };
+    const tracking = global[trackingId] as { feature: string; startTime: number } | undefined;
     if (!tracking) return;
 
     const duration = performance.now() - tracking.startTime;
     this.trackEvent(type, tracking.feature, metadata, duration, success);
 
-    delete (globalThis as any)[trackingId];
+    // Clean up tracking entry and timeout
+    delete global[trackingId];
+    const timeout = this.trackingTimeouts.get(trackingId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.trackingTimeouts.delete(trackingId);
+    }
   }
 
   /**
@@ -684,7 +726,7 @@ class AnalyticsService {
       const store = transaction.objectStore('analytics');
       store.add(event);
     } catch (error) {
-      console.warn('Failed to persist analytics event:', error);
+      logger.warn('Failed to persist analytics event', undefined, error as Error);
     }
   }
 
@@ -704,7 +746,7 @@ class AnalyticsService {
           .map(e => ({ ...e, timestamp: new Date(e.timestamp) }));
       };
     } catch (error) {
-      console.warn('Failed to load persisted analytics:', error);
+      logger.warn('Failed to load persisted analytics', undefined, error as Error);
     }
   }
 
@@ -728,7 +770,7 @@ class AnalyticsService {
         }
       };
     } catch (error) {
-      console.warn('Failed to cleanup old analytics:', error);
+      logger.warn('Failed to cleanup old analytics', undefined, error as Error);
     }
   }
 
@@ -757,7 +799,7 @@ class AnalyticsService {
       try {
         callback(event);
       } catch (error) {
-        console.error('Analytics event listener error:', error);
+        logger.error('Analytics event listener error', undefined, error as Error);
       }
     });
   }
@@ -769,7 +811,7 @@ class AnalyticsService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${EnterpriseAuthService.getAccessToken()}`
+          'Authorization': `Bearer ${enterpriseAuth.getAccessToken()}`
         },
         body: JSON.stringify(event)
       });
@@ -779,7 +821,7 @@ class AnalyticsService {
       }
     } catch (error) {
       // Silently fail - analytics shouldn't break functionality
-      console.warn('Failed to send analytics to server:', error);
+      logger.warn('Failed to send analytics to server', undefined, error as Error);
     }
   }
 

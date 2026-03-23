@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { logger } from '../utils/logger';
 import {
   analyticsService,
   AnalyticsEvent,
@@ -156,7 +157,7 @@ const AnalyticsDashboard: React.FC = () => {
       setUserEngagement(users);
       setAiStats(ai);
     } catch (error) {
-      console.error('Failed to load metrics:', error);
+      logger.error('Failed to load metrics', undefined, error as Error);
     } finally {
       setIsLoading(false);
     }
@@ -215,7 +216,7 @@ const AnalyticsDashboard: React.FC = () => {
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Export failed:', error);
+      logger.error('Export failed', undefined, error as Error);
     }
   };
 
@@ -435,15 +436,15 @@ const AnalyticsDashboard: React.FC = () => {
                     <div className="user-stats">
                       <div className="stat">
                         <label>Sessions</label>
-                        <value>{user.totalSessions}</value>
+                        <span className="stat-value">{user.totalSessions}</span>
                       </div>
                       <div className="stat">
                         <label>Queries</label>
-                        <value>{user.totalQueries}</value>
+                        <span className="stat-value">{user.totalQueries}</span>
                       </div>
                       <div className="stat">
                         <label>Avg/Session</label>
-                        <value>{user.avgQueriesPerSession.toFixed(1)}</value>
+                        <span className="stat-value">{user.avgQueriesPerSession.toFixed(1)}</span>
                       </div>
                     </div>
                     <div className="favorite-features">

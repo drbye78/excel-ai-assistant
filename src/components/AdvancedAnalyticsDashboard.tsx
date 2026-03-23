@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { logger } from '../utils/logger';
 import {
   advancedAnalyticsService,
   Anomaly,
@@ -47,20 +48,20 @@ const AnomalyCard: React.FC<AnomalyCardProps> = ({ anomaly }) => {
         <span className="anomaly-time">{new Date(anomaly.timestamp).toLocaleString()}</span>
       </div>
       <h4 className="anomaly-title">{anomaly.description}</h4>
-      <div className="anomaly-metrics">
-        <div className="metric">
-          <label>Expected:</label>
-          <value>{anomaly.expectedValue.toFixed(2)}</value>
+        <div className="anomaly-metrics">
+          <div className="metric">
+            <label>Expected:</label>
+            <span className="metric-value">{anomaly.expectedValue.toFixed(2)}</span>
+          </div>
+          <div className="metric">
+            <label>Actual:</label>
+            <span className="metric-value">{anomaly.actualValue.toFixed(2)}</span>
+          </div>
+          <div className={`metric deviation ${anomaly.deviation > 0 ? 'positive' : 'negative'}`}>
+            <label>Deviation:</label>
+            <span className="metric-value">{anomaly.deviation > 0 ? '+' : ''}{anomaly.deviation.toFixed(1)}%</span>
+          </div>
         </div>
-        <div className="metric">
-          <label>Actual:</label>
-          <value>{anomaly.actualValue.toFixed(2)}</value>
-        </div>
-        <div className={`metric deviation ${anomaly.deviation > 0 ? 'positive' : 'negative'}`}>
-          <label>Deviation:</label>
-          <value>{anomaly.deviation > 0 ? '+' : ''}{anomaly.deviation.toFixed(1)}%</value>
-        </div>
-      </div>
       {anomaly.recommendation && (
         <div className="recommendation">
           <strong>💡 Recommendation:</strong> {anomaly.recommendation}
@@ -276,7 +277,7 @@ const AdvancedAnalyticsDashboard: React.FC = () => {
           break;
       }
     } catch (error) {
-      console.error('Failed to load advanced analytics:', error);
+      logger.error('Failed to load advanced analytics', undefined, error as Error);
     } finally {
       setIsLoading(false);
     }
@@ -295,7 +296,7 @@ const AdvancedAnalyticsDashboard: React.FC = () => {
       metric: 'query_volume',
       condition: 'above',
       threshold: 1000,
-      timeWindow: '1h',
+      timeWindow: '24h',
       enabled: true,
       notificationChannels: ['in_app']
     });

@@ -1,6 +1,8 @@
 // OpenRouter Service - Dynamic Model Management
 // Fetches available models from OpenRouter API with caching
 
+import { logger } from '../utils/logger';
+
 export interface OpenRouterModel {
   id: string;
   name: string;
@@ -141,7 +143,7 @@ export class OpenRouterService {
         this.cachedModels = JSON.parse(cached);
       }
     } catch (error) {
-      console.warn('Failed to load cached models:', error);
+      logger.warn('Failed to load cached models', undefined, error as Error);
     }
   }
 
@@ -156,7 +158,7 @@ export class OpenRouterService {
       };
       localStorage.setItem(CACHE_KEY, JSON.stringify(this.cachedModels));
     } catch (error) {
-      console.warn('Failed to save models to cache:', error);
+      logger.warn('Failed to save models to cache', undefined, error as Error);
     }
   }
 
@@ -299,7 +301,7 @@ export class OpenRouterService {
     try {
       return await this.fetchModels(apiUrl, apiKey);
     } catch (error) {
-      console.error('Failed to fetch OpenRouter models:', error);
+      logger.error('Failed to fetch OpenRouter models', undefined, error as Error);
       // Return default models on error
       return DEFAULT_MODELS;
     }

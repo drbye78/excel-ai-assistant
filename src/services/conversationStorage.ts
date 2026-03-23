@@ -2,6 +2,7 @@
 // Manages persistent storage of chat conversations using IndexedDB
 
 import { Message } from "@/types";
+import { logger } from '../utils/logger';
 
 export interface Conversation {
   id: string;
@@ -384,7 +385,7 @@ export class ConversationStorage {
       await this.saveConversation(conversation);
       return conversation;
     } catch (error) {
-      throw new Error(`Failed to import conversation: ${error.message}`);
+      throw new Error(`Failed to import conversation: ${(error as Error).message}`);
     }
   }
 
@@ -487,51 +488,164 @@ export function getConversationStorage(): ConversationStorage {
   return storageInstance;
 }
 
-// Auto-save functionality
+// Auto-save functionality with debouncing
 export class AutoSaveManager {
   private storage: ConversationStorage;
   private currentConversation: Conversation | null = null;
-  private saveInterval: number = 30000; // 30 seconds
-  private intervalId: number | null = null;
+  private saveDebounceMs: number = 5000; // 5 second debounce
+  private debounceTimer: number | null = null;
+  private lastSavedHash: string = '';
+  private isDirty: boolean = false;
 
   constructor(storage: ConversationStorage) {
     this.storage = storage;
   }
 
+  /**
+   * Start auto-save for a conversation
+   * Uses debouncing to prevent excessive saves
+   */
   startAutoSave(conversation: Conversation): void {
     this.currentConversation = conversation;
-    this.stopAutoSave();
-
-    this.intervalId = window.setInterval(async () => {
-      if (this.currentConversation) {
-        try {
-          await this.storage.saveConversation(this.currentConversation);
-          console.log('Auto-saved conversation:', this.currentConversation.id);
-        } catch (error) {
-          console.error('Auto-save failed:', error);
-        }
-      }
-    }, this.saveInterval);
+    this.lastSavedHash = this.hashConversation(conversation);
+    this.isDirty = false;
+    this.clearDebounceTimer();
   }
 
-  stopAutoSave(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+  /**
+   * Mark conversation as dirty (needs to be saved)
+   * Call this whenever the conversation is modified
+   */
+  markDirty(): void {
+    this.isDirty = true;
+    this.scheduleSave();
+  }
+
+  /**
+   * Schedule a save with debouncing
+   * Only saves if conversation has actually changed
+   */
+  private scheduleSave(): void {
+    this.clearDebounceTimer();
+
+    this.debounceTimer = window.setTimeout(async () => {
+      await this.performSave();
+    }, this.saveDebounceMs);
+  }
+
+  /**
+   * Perform the actual save operation
+   */
+  private async performSave(): Promise<void> {
+    if (!this.currentConversation || !this.isDirty) {
+      return;
     }
-  }
 
-  setInterval(intervalMs: number): void {
-    this.saveInterval = intervalMs;
-    if (this.currentConversation) {
-      this.startAutoSave(this.currentConversation);
+    const currentHash = this.hashConversation(this.currentConversation);
+    
+    // Only save if conversation has actually changed
+    if (currentHash === this.lastSavedHash) {
+      this.isDirty = false;
+      return;
     }
-  }
 
-  async forceSave(): Promise<void> {
-    if (this.currentConversation) {
+    try {
       await this.storage.saveConversation(this.currentConversation);
+      this.lastSavedHash = currentHash;
+      this.isDirty = false;
+      logger.info('Auto-saved conversation', { 
+        conversationId: this.currentConversation.id,
+        messageCount: this.currentConversation.messages.length 
+      });
+    } catch (error) {
+      logger.error('Auto-save failed', { 
+        conversationId: this.currentConversation?.id 
+      }, error as Error);
+      // Retry after a delay on failure
+      this.scheduleRetry();
     }
+  }
+
+  /**
+   * Retry save on failure with exponential backoff
+   */
+  private scheduleRetry(attempt: number = 1): void {
+    const maxAttempts = 3;
+    const retryDelay = Math.min(1000 * Math.pow(2, attempt), 30000); // Max 30 seconds
+
+    if (attempt > maxAttempts) {
+      logger.error('Auto-save retry limit exceeded', { 
+        conversationId: this.currentConversation?.id 
+      });
+      return;
+    }
+
+    this.debounceTimer = window.setTimeout(async () => {
+      logger.info('Retrying auto-save', { attempt });
+      await this.performSave();
+      
+      // If still dirty after save, retry again
+      if (this.isDirty) {
+        this.scheduleRetry(attempt + 1);
+      }
+    }, retryDelay);
+  }
+
+  /**
+   * Clear debounce timer
+   */
+  private clearDebounceTimer(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+  }
+
+  /**
+   * Stop auto-save
+   */
+  stopAutoSave(): void {
+    this.clearDebounceTimer();
+    this.currentConversation = null;
+    this.isDirty = false;
+    this.lastSavedHash = '';
+  }
+
+  /**
+   * Set debounce interval
+   */
+  setDebounceInterval(intervalMs: number): void {
+    this.saveDebounceMs = Math.max(intervalMs, 1000); // Minimum 1 second
+    
+    // If there's a pending save, reschedule with new interval
+    if (this.isDirty && this.debounceTimer) {
+      this.scheduleSave();
+    }
+  }
+
+  /**
+   * Force immediate save (bypasses debouncing)
+   */
+  async forceSave(): Promise<void> {
+    this.clearDebounceTimer();
+    await this.performSave();
+  }
+
+  /**
+   * Check if conversation needs saving
+   */
+  isDirtyConversation(): boolean {
+    return this.isDirty;
+  }
+
+  /**
+   * Create a hash of the conversation for change detection
+   */
+  private hashConversation(conversation: Conversation): string {
+    // Simple hash based on message count and last message content
+    const lastMessage = conversation.messages[conversation.messages.length - 1];
+    const lastContent = lastMessage ? lastMessage.content : '';
+    return `${conversation.messages.length}-${lastContent.length}-${conversation.title}`;
   }
 }
 

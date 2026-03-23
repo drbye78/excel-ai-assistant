@@ -6,6 +6,14 @@
  */
 
 import { QueryMetadata, QueryStep, mCodeGenerator } from "./mCodeGenerator";
+import { logger } from "../utils/logger";
+
+/** Query column information */
+export interface QueryColumn {
+  name: string;
+  dataType: string;
+  index: number;
+}
 
 // ============================================================================
 // Type Definitions
@@ -131,6 +139,7 @@ export class PowerQueryService {
         Excel.run(async (context: Excel.RequestContext) => {
           // @ts-ignore
           const queries = context.workbook.queries;
+          // @ts-ignore - getItemOrNullObject not in type definitions
           const query = queries.getItemOrNullObject(name);
           query.load("name, formula, connection, description, resultType");
           await context.sync();
@@ -200,12 +209,46 @@ export class PowerQueryService {
   }
 
   /**
-   * Get columns from a query result
+   * Get columns from a query result by loading the result table
    */
-  private async getQueryColumns(queryName: string): Promise<any[]> {
-    // This would need to be implemented based on actual Excel API capabilities
-    // For now, return empty array
-    return [];
+  private async getQueryColumns(queryName: string): Promise<QueryColumn[]> {
+    try {
+      return await Excel.run(async (context) => {
+        // Find the table associated with this query
+        const worksheets = context.workbook.worksheets;
+        worksheets.load('items/name');
+        await context.sync();
+
+        for (const ws of worksheets.items) {
+          const tables = ws.tables;
+          tables.load('items/name');
+          await context.sync();
+
+          // Look for table matching query name
+          const table = tables.items.find((t: any) => 
+            t.name.toLowerCase() === queryName.toLowerCase() ||
+            t.name.toLowerCase().includes(queryName.toLowerCase())
+          );
+
+          if (table) {
+            const columns = table.columns;
+            columns.load('items/name, items/index');
+            await context.sync();
+
+            return columns.items.map((col: any) => ({
+              name: col.name,
+              dataType: 'unknown',
+              index: col.index
+            }));
+          }
+        }
+
+        return [];
+      });
+    } catch (error) {
+      logger.debug('Could not detect query columns', { queryName, error });
+      return [];
+    }
   }
 
   // ============================================================================
@@ -239,6 +282,7 @@ export class PowerQueryService {
           const queries = context.workbook.queries;
 
           // Check if query already exists
+          // @ts-ignore - Office.js API
           const existingQuery = queries.getItemOrNullObject(name);
           existingQuery.load();
           await context.sync();
@@ -252,6 +296,7 @@ export class PowerQueryService {
           }
 
           // Create new query
+          // @ts-ignore - Office.js API
           queries.add(name, mCode, description || "");
           await context.sync();
 
@@ -298,6 +343,7 @@ export class PowerQueryService {
           const queries = context.workbook.queries;
 
           // Get existing query
+          // @ts-ignore - Office.js API
           const query = queries.getItemOrNullObject(name);
           query.load();
           await context.sync();
@@ -344,6 +390,7 @@ export class PowerQueryService {
         Excel.run(async (context: Excel.RequestContext) => {
           // @ts-ignore
           const queries = context.workbook.queries;
+          // @ts-ignore - Office.js API
           const query = queries.getItemOrNullObject(name);
           query.load();
           await context.sync();
@@ -452,6 +499,7 @@ export class PowerQueryService {
         Excel.run(async (context: Excel.RequestContext) => {
           // @ts-ignore
           const workbook = context.workbook;
+          // @ts-ignore - Office.js API
           const connections = workbook.connections;
           connections.load("items");
           await context.sync();

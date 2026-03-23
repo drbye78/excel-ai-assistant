@@ -501,9 +501,27 @@ export class EnterpriseAuthService {
     this.failedLoginAttempts.set(email, current);
   }
 
+  /**
+   * Verify password using constant-time comparison to prevent timing attacks
+   */
   private verifyPassword(password: string, user: EnterpriseUser): boolean {
-    // In production, use bcrypt.compare
-    return this.hashPassword(password) === (user as any).passwordHash;
+    if (!user.passwordHash) return false;
+    
+    const hashedInput = this.hashPassword(password);
+    return this.constantTimeCompare(hashedInput, user.passwordHash);
+  }
+
+  /**
+   * Constant-time string comparison to prevent timing attacks
+   */
+  private constantTimeCompare(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    
+    let result = 0;
+    for (let i = 0; i < a.length; i++) {
+      result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return result === 0;
   }
 
   private hashPassword(password: string): string {
@@ -736,6 +754,17 @@ export class EnterpriseAuthService {
 
   isAuthenticated(): boolean {
     return this.currentUser !== null && this.isSessionValid();
+  }
+
+  /**
+   * Get access token for API authentication
+   * Returns session ID as token for enterprise users
+   */
+  getAccessToken(): string | null {
+    if (!this.isSessionValid() || !this.currentSession) {
+      return null;
+    }
+    return this.currentSession.sessionId;
   }
 }
 

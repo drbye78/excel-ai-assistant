@@ -40,7 +40,25 @@ export type CommandIntent =
   | 'redo'
   | 'highlight'
   | 'share'
-  | 'schedule';
+  | 'schedule'
+  // Phase 1: Navigation & Search
+  | 'navigate'
+  | 'search'
+  | 'trace'
+  | 'inspect'
+  // Phase 2: Enhanced Analytics
+  | 'summarize'
+  | 'forecast'
+  | 'normalize'
+  | 'detect'
+  | 'cleanse'
+  | 'categorize'
+  | 'simulate'
+  // Phase 3: Enterprise Features
+  | 'benchmark'
+  | 'prioritize'
+  | 'cluster'
+  | 'enrich';
 
 export type CommandTarget =
   | 'pivot'
@@ -166,7 +184,25 @@ export class NaturalLanguageCommandParser {
     'redo': ['повторить', 'повтори'],
     'highlight': ['выделить', 'подчеркнуть', 'выдели', 'подчеркни'],
     'share': ['поделиться', 'отправить', 'опубликовать', 'поделись', 'отправь'],
-    'schedule': ['запланировать', 'расписание', 'запланируй']
+    'schedule': ['запланировать', 'расписание', 'запланируй'],
+    // Phase 1: Navigation & Search
+    'navigate': ['перейти', 'перейди', 'открыть', 'открой', 'переключиться', 'переключись'],
+    'search': ['искать', 'ищи', 'найти', 'найди', 'поиск', 'поищи'],
+    'trace': ['отследить', 'отследи', 'проследить', 'проследи', 'трассировка'],
+    'inspect': ['проверить', 'проверь', 'инспектировать', 'осмотреть', 'диагностировать'],
+    // Phase 2: Enhanced Analytics
+    'summarize': ['подытожить', 'обобщить', 'сделай итог', 'подведи итог', 'сводка'],
+    'forecast': ['прогноз', 'спрогнозировать', 'предсказать', 'прогнозировать'],
+    'normalize': ['нормализовать', 'нормализуй', 'стандартизировать', 'стандартизуй'],
+    'detect': ['обнаружить', 'обнаружь', 'найти', 'найди', 'выявить', 'выяви'],
+    'cleanse': ['очистить', 'очисти', 'почистить', 'почисти', 'очистка данных'],
+    'categorize': ['категоризировать', 'категоризуй', 'классифицировать', 'классифицируй'],
+    'simulate': ['симулировать', 'симулируй', 'смоделировать', 'смоделируй', 'моделирование'],
+    // Phase 3: Enterprise Features
+    'benchmark': ['сравнить с эталоном', 'бенчмарк', 'оценить производительность'],
+    'prioritize': ['приоритизировать', 'приоритизуй', 'ранжировать', 'ранжируй', 'задать приоритет'],
+    'cluster': ['кластеризовать', 'кластеризуй', 'группировать похожие', 'сегментировать'],
+    'enrich': ['обогатить', 'обогати', 'дополнить данными', 'добавить данные']
   };
 
   // Russian target keywords
@@ -574,7 +610,25 @@ export class NaturalLanguageCommandParser {
       'redo': ['redo', 'repeat', 'reapply'],
       'highlight': ['highlight', 'mark', 'emphasize', 'spotlight'],
       'share': ['share', 'collaborate', 'send', 'publish', 'distribute'],
-      'schedule': ['schedule', 'plan', 'automate timing', 'set up recurring', 'set schedule']
+      'schedule': ['schedule', 'plan', 'automate timing', 'set up recurring', 'set schedule'],
+      // Phase 1: Navigation & Search
+      'navigate': ['navigate', 'go to', 'jump to', 'open', 'switch to'],
+      'search': ['search', 'find in', 'look for', 'locate in', 'search for'],
+      'trace': ['trace', 'audit formula', 'show dependencies', 'show precedents', 'trace dependencies'],
+      'inspect': ['inspect', 'debug', 'troubleshoot', 'diagnose', 'check for errors'],
+      // Phase 2: Enhanced Analytics
+      'summarize': ['summarize', 'summary', 'recap', 'overview', 'give me an overview'],
+      'forecast': ['forecast', 'predict', 'project', 'estimate future', 'extrapolate'],
+      'normalize': ['normalize', 'standardize', 'scale', 'rescale', 'min-max'],
+      'detect': ['detect', 'find outliers', 'identify anomalies', 'find anomalies', 'spot unusual'],
+      'cleanse': ['cleanse', 'clean', 'fix data', 'clean up', 'tidy up'],
+      'categorize': ['categorize', 'classify', 'segment', 'group by', 'assign category'],
+      'simulate': ['simulate', 'run scenario', 'what-if', 'model scenario', 'monte carlo'],
+      // Phase 3: Enterprise Features
+      'benchmark': ['benchmark', 'compare to', 'measure against', 'compare with', 'vs target'],
+      'prioritize': ['prioritize', 'rank', 'score', 'order by importance', 'most important'],
+      'cluster': ['cluster', 'group similar', 'segment by similarity', 'find groups'],
+      'enrich': ['enrich', 'add data', 'append external', 'lookup from', 'fetch data']
     };
 
     // Merge with Russian patterns if needed
@@ -758,6 +812,28 @@ export class NaturalLanguageCommandParser {
       case 'print':
         this.extractPrintParameters(text, parameters);
         break;
+      // New target parameter extraction
+      case 'formulaError':
+        this.extractFormulaErrorParameters(text, parameters);
+        break;
+      case 'conditionalFormat':
+        this.extractConditionalFormatParameters(text, parameters);
+        break;
+      case 'chartAxis':
+        this.extractChartAxisParameters(text, parameters);
+        break;
+      case 'dataModel':
+        this.extractDataModelParameters(text, parameters);
+        break;
+      case 'dashboard':
+        this.extractDashboardParameters(text, parameters);
+        break;
+      case 'template':
+        this.extractTemplateParameters(text, parameters);
+        break;
+      case 'theme':
+        this.extractThemeParameters(text, parameters);
+        break;
     }
 
     // Intent-specific parameter extraction
@@ -812,9 +888,785 @@ export class NaturalLanguageCommandParser {
       case 'optimize':
         this.extractOptimizeParameters(text, parameters);
         break;
+      // New intent parameter extraction
+      case 'navigate':
+        this.extractNavigateParameters(text, parameters);
+        break;
+      case 'search':
+        this.extractSearchParameters(text, parameters);
+        break;
+      case 'summarize':
+        this.extractSummarizeParameters(text, parameters);
+        break;
+      case 'forecast':
+        this.extractForecastParameters(text, parameters);
+        break;
+      case 'trace':
+        this.extractTraceParameters(text, parameters);
+        break;
+      case 'inspect':
+        this.extractInspectParameters(text, parameters);
+        break;
+      case 'normalize':
+        this.extractNormalizeParameters(text, parameters);
+        break;
+      case 'detect':
+        this.extractDetectParameters(text, parameters);
+        break;
+      case 'cleanse':
+        this.extractCleanseParameters(text, parameters);
+        break;
+      case 'categorize':
+        this.extractCategorizeParameters(text, parameters);
+        break;
+      case 'simulate':
+        this.extractSimulateParameters(text, parameters);
+        break;
+      case 'benchmark':
+        this.extractBenchmarkParameters(text, parameters);
+        break;
+      case 'prioritize':
+        this.extractPrioritizeParameters(text, parameters);
+        break;
+      case 'cluster':
+        this.extractClusterParameters(text, parameters);
+        break;
+      case 'enrich':
+        this.extractEnrichParameters(text, parameters);
+        break;
     }
 
     return parameters;
+  }
+
+  /**
+   * Extract navigation-specific parameters
+   */
+  private extractNavigateParameters(text: string, parameters: Record<string, any>): void {
+    // Extract sheet name
+    const sheetMatch = text.match(/(?:to|on|open|switch to|navigate to|go to)\s+(?:sheet|worksheet|лист)?\s*['"]?([^'"\s,]+)['"]?/i);
+    if (sheetMatch) {
+      parameters.sheetName = sheetMatch[1].trim();
+    }
+
+    // Extract cell address
+    const cellMatch = text.match(/(?:to|cell|ячейк[ау])\s+([a-z]+\d+)/i);
+    if (cellMatch) {
+      parameters.cellAddress = cellMatch[1].toUpperCase();
+    }
+
+    // Extract named range
+    const namedRangeMatch = text.match(/(?:to|named range|именованн[ыйая]+\s+диапазон)\s+['"]?([^'"\s]+)['"]?/i);
+    if (namedRangeMatch) {
+      parameters.namedRange = namedRangeMatch[1].trim();
+    }
+
+    // Extract table name
+    const tableMatch = text.match(/(?:to|table|таблиц[ае])\s+['"]?([^'"\s]+)['"]?/i);
+    if (tableMatch) {
+      parameters.tableName = tableMatch[1].trim();
+    }
+
+    // Relative navigation
+    if (text.includes('last row') || text.includes('последняя строка')) {
+      parameters.specialLocation = 'lastRow';
+    }
+    if (text.includes('first row') || text.includes('первая строка')) {
+      parameters.specialLocation = 'firstRow';
+    }
+    if (text.includes('last column') || text.includes('последний столбец')) {
+      parameters.specialLocation = 'lastColumn';
+    }
+    if (text.includes('first column') || text.includes('первый столбец')) {
+      parameters.specialLocation = 'firstColumn';
+    }
+    if (text.includes('end of data') || text.includes('конец данных')) {
+      parameters.specialLocation = 'endOfData';
+    }
+    if (text.includes('beginning') || text.includes('начало')) {
+      parameters.specialLocation = 'beginning';
+    }
+  }
+
+  /**
+   * Extract search-specific parameters
+   */
+  private extractSearchParameters(text: string, parameters: Record<string, any>): void {
+    // Search term
+    const termMatch = text.match(/(?:for|search for|find|locate|найти|искать|ищи)\s+['"]([^'"]+)['"]/i) ||
+                      text.match(/(?:for|search for|find|locate|найти|искать|ищи)\s+(\w+)/i);
+    if (termMatch) {
+      parameters.searchTerm = termMatch[1].trim();
+    }
+
+    // Search scope
+    if (text.includes('formulas') || text.includes('формулы')) {
+      parameters.searchIn = 'formulas';
+    } else if (text.includes('values') || text.includes('значения')) {
+      parameters.searchIn = 'values';
+    } else if (text.includes('comments') || text.includes('комментарии')) {
+      parameters.searchIn = 'comments';
+    } else if (text.includes('names') || text.includes('имена')) {
+      parameters.searchIn = 'names';
+    } else {
+      parameters.searchIn = 'all'; // Default
+    }
+
+    // Search location
+    if (text.includes('in this sheet') || text.includes('на этом листе')) {
+      parameters.scope = 'sheet';
+    } else if (text.includes('in workbook') || text.includes('в книге')) {
+      parameters.scope = 'workbook';
+    } else if (text.includes('in selection') || text.includes('в выделении')) {
+      parameters.scope = 'selection';
+    }
+
+    // Match options
+    if (text.includes('match case') || text.includes('с учетом регистра')) {
+      parameters.matchCase = true;
+    }
+    if (text.includes('entire cell') || text.includes('whole cell') || text.includes('точное совпадение')) {
+      parameters.matchEntireCell = true;
+    }
+
+    // Regex pattern
+    const regexMatch = text.match(/(?:pattern|regex|паттерн)\s+['"]([^'"]+)['"]/i);
+    if (regexMatch) {
+      parameters.pattern = regexMatch[1];
+      parameters.isRegex = true;
+    }
+  }
+
+  /**
+   * Extract summarize-specific parameters
+   */
+  private extractSummarizeParameters(text: string, parameters: Record<string, any>): void {
+    // What to summarize
+    if (text.includes('data') || text.includes('данные')) {
+      parameters.summarizeType = 'data';
+    } else if (text.includes('table') || text.includes('таблица')) {
+      parameters.summarizeType = 'table';
+    } else if (text.includes('chart') || text.includes('диаграмма')) {
+      parameters.summarizeType = 'chart';
+    } else if (text.includes('pivot') || text.includes('сводная')) {
+      parameters.summarizeType = 'pivot';
+    } else {
+      parameters.summarizeType = 'selection'; // Default
+    }
+
+    // Summary level
+    if (text.includes('brief') || text.includes('quick') || text.includes('кратко')) {
+      parameters.detailLevel = 'brief';
+    } else if (text.includes('detailed') || text.includes('подробно')) {
+      parameters.detailLevel = 'detailed';
+    } else {
+      parameters.detailLevel = 'standard';
+    }
+
+    // Include statistics
+    if (text.includes('statistics') || text.includes('статистика')) {
+      parameters.includeStatistics = true;
+    }
+
+    // Include trends
+    if (text.includes('trend') || text.includes('тренд')) {
+      parameters.includeTrends = true;
+    }
+
+    // Include insights
+    if (text.includes('insights') || text.includes('инсайты') || text.includes('рекомендации')) {
+      parameters.includeInsights = true;
+    }
+  }
+
+  /**
+   * Extract forecast-specific parameters
+   */
+  private extractForecastParameters(text: string, parameters: Record<string, any>): void {
+    // Data to forecast
+    const dataMatch = text.match(/(?:for|of|sales|revenue|values?|данные|продажи|выручк)\s*/i);
+    if (dataMatch) {
+      parameters.dataSource = dataMatch[0].trim();
+    }
+
+    // Forecast period
+    const periodMatch = text.match(/(?:next|following|предстоящ[ие]+)\s+(\d+)\s*(day|week|month|quarter|year|день|недел[яю]|месяц|квартал|год)/i);
+    if (periodMatch) {
+      parameters.periods = parseInt(periodMatch[1]);
+      parameters.periodType = periodMatch[2].toLowerCase();
+    }
+
+    // Forecast method
+    if (text.includes('linear') || text.includes('линейн')) {
+      parameters.method = 'linear';
+    } else if (text.includes('exponential') || text.includes('экспоненциальн')) {
+      parameters.method = 'exponential';
+    } else if (text.includes('moving average') || text.includes('скользящее среднее')) {
+      parameters.method = 'movingAverage';
+    } else if (text.includes('seasonal') || text.includes('сезонн')) {
+      parameters.method = 'seasonal';
+    } else {
+      parameters.method = 'auto'; // Default: auto-detect best method
+    }
+
+    // Confidence interval
+    if (text.includes('confidence') || text.includes('доверительн')) {
+      const confMatch = text.match(/(\d+)%/);
+      if (confMatch) {
+        parameters.confidenceInterval = parseInt(confMatch[1]) / 100;
+      } else {
+        parameters.confidenceInterval = 0.95; // Default 95%
+      }
+    }
+
+    // Include historical data in output
+    if (text.includes('with history') || text.includes('с историей')) {
+      parameters.includeHistorical = true;
+    }
+
+    // Output location
+    const outputMatch = text.match(/(?:to|in|into|в)\s+(?:cell|ячейку)\s+([a-z]+\d+)/i);
+    if (outputMatch) {
+      parameters.outputCell = outputMatch[1].toUpperCase();
+    }
+  }
+
+  /**
+   * Extract trace-specific parameters
+   */
+  private extractTraceParameters(text: string, parameters: Record<string, any>): void {
+    // Cell to trace
+    const cellMatch = text.match(/(?:in|for|from|cell|ячейк[ау])\s+([a-z]+\d+)/i);
+    if (cellMatch) {
+      parameters.targetCell = cellMatch[1].toUpperCase();
+    }
+
+    // Trace direction
+    if (text.includes('precedent') || text.includes('исходные') || text.includes('источники')) {
+      parameters.traceDirection = 'precedents';
+    } else if (text.includes('dependent') || text.includes('зависимые')) {
+      parameters.traceDirection = 'dependents';
+    } else {
+      parameters.traceDirection = 'both'; // Default
+    }
+
+    // Trace depth
+    const depthMatch = text.match(/(?:level|depth|уровень)\s+(\d+)/i);
+    if (depthMatch) {
+      parameters.depth = parseInt(depthMatch[1]);
+    } else {
+      parameters.depth = 3; // Default depth
+    }
+
+    // Include external references
+    if (text.includes('external') || text.includes('внешние')) {
+      parameters.includeExternal = true;
+    }
+
+    // Visual highlighting
+    if (text.includes('highlight') || text.includes('выдели')) {
+      parameters.highlight = true;
+    }
+  }
+
+  /**
+   * Extract inspect-specific parameters
+   */
+  private extractInspectParameters(text: string, parameters: Record<string, any>): void {
+    // Cell to inspect
+    const cellMatch = text.match(/(?:in|for|cell|ячейк[ау])\s+([a-z]+\d+)/i);
+    if (cellMatch) {
+      parameters.targetCell = cellMatch[1].toUpperCase();
+    }
+
+    // What to inspect
+    if (text.includes('formula') || text.includes('формула')) {
+      parameters.inspectType = 'formula';
+    } else if (text.includes('error') || text.includes('ошибк')) {
+      parameters.inspectType = 'error';
+    } else if (text.includes('circular') || text.includes('циклическ')) {
+      parameters.inspectType = 'circular';
+    } else if (text.includes('reference') || text.includes('ссылк')) {
+      parameters.inspectType = 'reference';
+    } else {
+      parameters.inspectType = 'all'; // Default
+    }
+
+    // Error types to look for
+    if (text.includes('#REF') || text.includes('#ССЫЛКА')) {
+      parameters.errorTypes = ['#REF!'];
+    } else if (text.includes('#N/A') || text.includes('#Н/Д')) {
+      parameters.errorTypes = ['#N/A'];
+    } else if (text.includes('#VALUE') || text.includes('#ЗНАЧ')) {
+      parameters.errorTypes = ['#VALUE!'];
+    } else if (text.includes('#DIV') || text.includes('#ДЕЛ')) {
+      parameters.errorTypes = ['#DIV/0!'];
+    } else if (text.includes('all errors') || text.includes('все ошибки')) {
+      parameters.errorTypes = ['#REF!', '#N/A', '#VALUE!', '#DIV/0!', '#NAME?', '#NUM!', '#NULL!'];
+    }
+
+    // Fix suggestions
+    if (text.includes('fix') || text.includes('исправь')) {
+      parameters.autoFix = true;
+    }
+  }
+
+  /**
+   * Extract normalize-specific parameters
+   */
+  private extractNormalizeParameters(text: string, parameters: Record<string, any>): void {
+    // Normalization method
+    if (text.includes('min-max') || text.includes('0-1') || text.includes('0 to 1')) {
+      parameters.method = 'minMax';
+      parameters.targetRange = { min: 0, max: 1 };
+    } else if (text.includes('z-score') || text.includes('z score') || text.includes('standard')) {
+      parameters.method = 'zScore';
+    } else if (text.includes('percentage') || text.includes('%') || text.includes('процент')) {
+      parameters.method = 'percentage';
+      const baseMatch = text.match(/(?:of|от)\s+(\d+)/i);
+      if (baseMatch) {
+        parameters.percentageBase = parseInt(baseMatch[1]);
+      }
+    } else if (text.includes('decimal') || text.includes('десятичн')) {
+      parameters.method = 'decimal';
+    } else if (text.includes('log') || text.includes('логарифм')) {
+      parameters.method = 'logarithmic';
+    } else {
+      parameters.method = 'minMax'; // Default
+    }
+
+    // Custom range for min-max
+    const rangeMatch = text.match(/(?:range|диапазон)\s+(\d+)\s*(?:to|до|-)\s*(\d+)/i);
+    if (rangeMatch) {
+      parameters.targetRange = {
+        min: parseInt(rangeMatch[1]),
+        max: parseInt(rangeMatch[2])
+      };
+    }
+
+    // Preserve original
+    if (text.includes('keep original') || text.includes('сохранить оригинал')) {
+      parameters.preserveOriginal = true;
+    }
+
+    // Output location
+    const outputMatch = text.match(/(?:to|in|into|в)\s+(?:column|столбец)\s+([a-z])/i);
+    if (outputMatch) {
+      parameters.outputColumn = outputMatch[1].toUpperCase();
+    }
+  }
+
+  /**
+   * Extract detect-specific parameters
+   */
+  private extractDetectParameters(text: string, parameters: Record<string, any>): void {
+    // What to detect
+    if (text.includes('outlier') || text.includes('выброс')) {
+      parameters.detectType = 'outliers';
+    } else if (text.includes('duplicate') || text.includes('дубликат')) {
+      parameters.detectType = 'duplicates';
+    } else if (text.includes('missing') || text.includes('пропуск')) {
+      parameters.detectType = 'missing';
+    } else if (text.includes('error') || text.includes('ошибк')) {
+      parameters.detectType = 'errors';
+    } else if (text.includes('pattern') || text.includes('паттерн')) {
+      parameters.detectType = 'patterns';
+    } else {
+      parameters.detectType = 'outliers'; // Default
+    }
+
+    // Detection method
+    if (text.includes('iqr') || text.includes('interquartile')) {
+      parameters.method = 'iqr';
+    } else if (text.includes('z-score') || text.includes('standard deviation')) {
+      parameters.method = 'zScore';
+      const thresholdMatch = text.match(/(?:threshold|порог)\s+(\d+(?:\.\d+)?)/i);
+      if (thresholdMatch) {
+        parameters.threshold = parseFloat(thresholdMatch[1]);
+      } else {
+        parameters.threshold = 3; // Default 3 standard deviations
+      }
+    } else if (text.includes('percentile') || text.includes('процентиль')) {
+      parameters.method = 'percentile';
+      const pMatch = text.match(/(\d+)(?:st|nd|rd|th)?\s*percentile/i);
+      if (pMatch) {
+        parameters.percentile = parseInt(pMatch[1]);
+      }
+    } else {
+      parameters.method = 'iqr'; // Default
+    }
+
+    // Action on detection
+    if (text.includes('highlight') || text.includes('выдели')) {
+      parameters.action = 'highlight';
+    } else if (text.includes('delete') || text.includes('удали')) {
+      parameters.action = 'delete';
+    } else if (text.includes('flag') || text.includes('отметь')) {
+      parameters.action = 'flag';
+    } else if (text.includes('replace') || text.includes('замени')) {
+      parameters.action = 'replace';
+    } else {
+      parameters.action = 'report'; // Default: just report
+    }
+
+    // Output location
+    if (text.includes('new column') || text.includes('новый столбец')) {
+      parameters.outputToNewColumn = true;
+    }
+  }
+
+  /**
+   * Extract cleanse-specific parameters
+   */
+  private extractCleanseParameters(text: string, parameters: Record<string, any>): void {
+    // What to clean
+    const cleanTypes: string[] = [];
+    
+    if (text.includes('whitespace') || text.includes('пробел')) {
+      cleanTypes.push('whitespace');
+    }
+    if (text.includes('duplicate') || text.includes('дубликат')) {
+      cleanTypes.push('duplicates');
+    }
+    if (text.includes('empty') || text.includes('blank') || text.includes('пуст')) {
+      cleanTypes.push('empty');
+    }
+    if (text.includes('format') || text.includes('формат')) {
+      cleanTypes.push('format');
+    }
+    if (text.includes('case') || text.includes('регистр')) {
+      cleanTypes.push('case');
+    }
+    if (text.includes('special character') || text.includes('спецсимвол')) {
+      cleanTypes.push('specialChars');
+    }
+
+    if (cleanTypes.length > 0) {
+      parameters.cleanTypes = cleanTypes;
+    } else {
+      parameters.cleanTypes = ['all']; // Default: clean everything
+    }
+
+    // Case standardization
+    if (text.includes('lowercase') || text.includes('нижний регистр')) {
+      parameters.caseStandard = 'lower';
+    } else if (text.includes('uppercase') || text.includes('верхний регистр')) {
+      parameters.caseStandard = 'upper';
+    } else if (text.includes('proper case') || text.includes('title case') || text.includes('как заголовок')) {
+      parameters.caseStandard = 'proper';
+    }
+
+    // Trim options
+    if (text.includes('trim') || text.includes('обрезать')) {
+      parameters.trimWhitespace = true;
+    }
+    if (text.includes('leading') || text.includes('начальные')) {
+      parameters.trimLeading = true;
+    }
+    if (text.includes('trailing') || text.includes('конечные')) {
+      parameters.trimTrailing = true;
+    }
+
+    // Replace empty cells
+    const replaceMatch = text.match(/(?:replace empty with|заменить пустые на)\s+['"]?([^'"]+)['"]?/i);
+    if (replaceMatch) {
+      parameters.replaceEmptyWith = replaceMatch[1];
+    }
+
+    // Preserve original
+    if (text.includes('keep original') || text.includes('сохранить оригинал')) {
+      parameters.preserveOriginal = true;
+    }
+  }
+
+  /**
+   * Extract categorize-specific parameters
+   */
+  private extractCategorizeParameters(text: string, parameters: Record<string, any>): void {
+    // Column to categorize
+    const columnMatch = text.match(/(?:column|столбец|поле)\s+['"]?([^'"\s]+)['"]?/i);
+    if (columnMatch) {
+      parameters.sourceColumn = columnMatch[1].trim();
+    }
+
+    // Predefined categorization types
+    if (text.includes('tier') || text.includes('уровень')) {
+      parameters.categorizationType = 'tier';
+      if (text.includes('high') && text.includes('medium') && text.includes('low')) {
+        parameters.tierDefinitions = [
+          { name: 'High', threshold: 0.8 },
+          { name: 'Medium', threshold: 0.5 },
+          { name: 'Low', threshold: 0 }
+        ];
+      }
+    } else if (text.includes('quartile') || text.includes('квартиль')) {
+      parameters.categorizationType = 'quartile';
+    } else if (text.includes('percentile') || text.includes('процентиль')) {
+      parameters.categorizationType = 'percentile';
+    } else if (text.includes('range') || text.includes('диапазон')) {
+      parameters.categorizationType = 'range';
+    }
+
+    // Output column
+    const outputMatch = text.match(/(?:to|in|into|в)\s+(?:column|столбец)\s+['"]?([^'"\s]+)['"]?/i);
+    if (outputMatch) {
+      parameters.outputColumn = outputMatch[1].trim();
+    }
+
+    // Include counts
+    if (text.includes('with count') || text.includes('с количеством')) {
+      parameters.includeCounts = true;
+    }
+  }
+
+  /**
+   * Extract simulate-specific parameters
+   */
+  private extractSimulateParameters(text: string, parameters: Record<string, any>): void {
+    // Simulation type
+    if (text.includes('monte carlo') || text.includes('монте карло')) {
+      parameters.simulationType = 'monteCarlo';
+      const iterationMatch = text.match(/(\d+)\s*(?:iterations|итераций|runs|прогонов)/i);
+      if (iterationMatch) {
+        parameters.iterations = parseInt(iterationMatch[1]);
+      } else {
+        parameters.iterations = 1000; // Default
+      }
+    } else if (text.includes('sensitivity') || text.includes('чувствительност')) {
+      parameters.simulationType = 'sensitivity';
+    } else if (text.includes('scenario') || text.includes('сценарий')) {
+      parameters.simulationType = 'scenario';
+    } else {
+      parameters.simulationType = 'scenario'; // Default
+    }
+
+    // Scenario names
+    const scenarioPattern = /(?:scenario|сценарий)\s+['"]([^'"]+)['"]/gi;
+    const scenarios: string[] = [];
+    let match;
+    while ((match = scenarioPattern.exec(text)) !== null) {
+      scenarios.push(match[1]);
+    }
+    if (scenarios.length > 0) {
+      parameters.scenarios = scenarios;
+    }
+
+    // Output location
+    if (text.includes('new sheet') || text.includes('новый лист')) {
+      parameters.outputToNewSheet = true;
+    }
+  }
+
+  /**
+   * Extract benchmark-specific parameters
+   */
+  private extractBenchmarkParameters(text: string, parameters: Record<string, any>): void {
+    // Data to benchmark
+    const dataMatch = text.match(/(?:for|of|data|данные|показател[ьи])\s+['"]?([^'"]+?)['"]?\s+(?:against|vs|против)/i);
+    if (dataMatch) {
+      parameters.dataColumn = dataMatch[1].trim();
+    }
+
+    // Benchmark source
+    const benchmarkMatch = text.match(/(?:against|vs|versus|против|по сравнению с)\s+['"]?([^'"]+?)['"]?$/i);
+    if (benchmarkMatch) {
+      parameters.benchmarkSource = benchmarkMatch[1].trim();
+    }
+
+    // Benchmark type
+    if (text.includes('target') || text.includes('цель')) {
+      parameters.benchmarkType = 'target';
+      const targetMatch = text.match(/(?:target|цель)\s+(?:of|в)\s+(\d+)/i);
+      if (targetMatch) {
+        parameters.targetValue = parseFloat(targetMatch[1]);
+      }
+    } else if (text.includes('average') || text.includes('industry') || text.includes('среднее') || text.includes('отрасл')) {
+      parameters.benchmarkType = 'industry';
+    } else if (text.includes('previous') || text.includes('last year') || text.includes('прошлогодн')) {
+      parameters.benchmarkType = 'historical';
+    } else if (text.includes('competitor') || text.includes('конкурент')) {
+      parameters.benchmarkType = 'competitor';
+    } else {
+      parameters.benchmarkType = 'target';
+    }
+
+    // Metrics to calculate
+    const metrics: string[] = [];
+    if (text.includes('variance') || text.includes('отклонение')) {
+      metrics.push('variance');
+    }
+    if (text.includes('percent') || text.includes('%') || text.includes('процент')) {
+      metrics.push('percentDifference');
+    }
+    if (text.includes('absolute') || text.includes('абсолютн')) {
+      metrics.push('absoluteDifference');
+    }
+    if (text.includes('ratio') || text.includes('соотношен')) {
+      metrics.push('ratio');
+    }
+    if (metrics.length > 0) {
+      parameters.metrics = metrics;
+    } else {
+      parameters.metrics = ['variance', 'percentDifference'];
+    }
+
+    // Highlight underperformers
+    if (text.includes('highlight') || text.includes('выдели')) {
+      parameters.highlightUnderperformers = true;
+    }
+  }
+
+  /**
+   * Extract prioritize-specific parameters
+   */
+  private extractPrioritizeParameters(text: string, parameters: Record<string, any>): void {
+    // Items to prioritize
+    const itemsMatch = text.match(/(?:prioritize|rank|score|ранжировать)\s+['"]?([^'"]+?)['"]?/i);
+    if (itemsMatch) {
+      parameters.itemsColumn = itemsMatch[1].trim();
+    }
+
+    // Criteria
+    const criteriaPattern = /(?:by|based on|по|на основе)\s+['"]?([^'"]+?)['"]?/gi;
+    const criteria: Array<{column: string; order?: string}> = [];
+    let match;
+    while ((match = criteriaPattern.exec(text)) !== null) {
+      criteria.push({
+        column: match[1].trim(),
+        order: text.includes('descending') || text.includes('убыванию') ? 'descending' : 'ascending'
+      });
+    }
+    if (criteria.length > 0) {
+      parameters.criteria = criteria;
+    }
+
+    // Scoring method
+    if (text.includes('weighted') || text.includes('взвешен')) {
+      parameters.scoringMethod = 'weighted';
+    } else if (text.includes('equal') || text.includes('равн')) {
+      parameters.scoringMethod = 'equal';
+    } else if (text.includes('custom') || text.includes('пользовательск')) {
+      parameters.scoringMethod = 'custom';
+    } else {
+      parameters.scoringMethod = 'weighted';
+    }
+
+    // Output options
+    if (text.includes('rank column') || text.includes('столбец ранга')) {
+      parameters.addRankColumn = true;
+    }
+    if (text.includes('score column') || text.includes('столбец оценки')) {
+      parameters.addScoreColumn = true;
+    }
+    if (text.includes('top') || text.includes('лучши')) {
+      const topMatch = text.match(/top\s+(\d+)/i);
+      if (topMatch) {
+        parameters.topN = parseInt(topMatch[1]);
+      }
+    }
+  }
+
+  /**
+   * Extract cluster-specific parameters
+   */
+  private extractClusterParameters(text: string, parameters: Record<string, any>): void {
+    // Data to cluster
+    const dataMatch = text.match(/(?:cluster|group|segment|кластеризовать|группировать)\s+['"]?([^'"]+?)['"]?/i);
+    if (dataMatch) {
+      parameters.dataColumn = dataMatch[1].trim();
+    }
+
+    // Number of clusters
+    const nMatch = text.match(/(\d+)\s*(?:clusters?|groups?|segments?|кластер[аов]*|групп[аы]*|сегмент[аов]*)/i);
+    if (nMatch) {
+      parameters.numberOfClusters = parseInt(nMatch[1]);
+    } else if (text.includes('auto') || text.includes('автоматически')) {
+      parameters.numberOfClusters = 'auto';
+    }
+
+    // Clustering method
+    if (text.includes('k-means') || text.includes('kmeans')) {
+      parameters.method = 'kMeans';
+    } else if (text.includes('hierarchical') || text.includes('иерархическ')) {
+      parameters.method = 'hierarchical';
+    } else if (text.includes('dbscan')) {
+      parameters.method = 'dbscan';
+    } else {
+      parameters.method = 'kMeans'; // Default
+    }
+
+    // Output options
+    if (text.includes('label') || text.includes('метка')) {
+      parameters.addClusterLabel = true;
+    }
+    if (text.includes('centroid') || text.includes('центройд')) {
+      parameters.showCentroids = true;
+    }
+    if (text.includes('visualization') || text.includes('визуализация')) {
+      parameters.createVisualization = true;
+    }
+  }
+
+  /**
+   * Extract enrich-specific parameters
+   */
+  private extractEnrichParameters(text: string, parameters: Record<string, any>): void {
+    // Source data
+    if (text.includes('external') || text.includes('внешн')) {
+      parameters.sourceType = 'external';
+      const fileMatch = text.match(/(?:from|из)\s+['"]?([^'"]+\.\w+)['"]?/i);
+      if (fileMatch) {
+        parameters.sourceFile = fileMatch[1];
+      }
+    } else if (text.includes('lookup') || text.includes('vlookup') || text.includes('впр')) {
+      parameters.sourceType = 'lookup';
+      const tableMatch = text.match(/(?:from|из)\s+['"]?([^'"]+?)['"]?/i);
+      if (tableMatch) {
+        parameters.lookupTable = tableMatch[1];
+      }
+    } else if (text.includes('calculated') || text.includes('вычисляем')) {
+      parameters.sourceType = 'calculated';
+    }
+
+    // Key column for matching
+    const keyMatch = text.match(/(?:match on|key|по ключу|сопоставляя по)\s+['"]?([^'"]+?)['"]?/i);
+    if (keyMatch) {
+      parameters.keyColumn = keyMatch[1].trim();
+    }
+
+    // Columns to add
+    const columnPattern = /(?:add|include|добавить|включить)\s+['"]?([^'"]+?)['"]?/gi;
+    const columns: string[] = [];
+    let match;
+    while ((match = columnPattern.exec(text)) !== null) {
+      columns.push(match[1].trim());
+    }
+    if (columns.length > 0) {
+      parameters.columnsToAdd = columns;
+    }
+
+    // Calculation formula
+    const formulaMatch = text.match(/(?:formula|формула|calculation|вычисление)\s+['"]([^'"]+)['"]/i);
+    if (formulaMatch) {
+      parameters.formula = formulaMatch[1];
+    }
+
+    // Match type
+    if (text.includes('exact match') || text.includes('точное совпадение')) {
+      parameters.matchType = 'exact';
+    } else if (text.includes('fuzzy') || text.includes('приблизительн')) {
+      parameters.matchType = 'fuzzy';
+    } else {
+      parameters.matchType = 'exact';
+    }
+
+    // Handle missing data
+    if (text.includes('if missing') || text.includes('если отсутствует')) {
+      const missingMatch = text.match(/(?:if missing|если отсутствует)\s+(?:use|использовать)\s+['"]?([^'"]+?)['"]?/i);
+      if (missingMatch) {
+        parameters.missingValueDefault = missingMatch[1];
+      }
+    }
   }
 
   /**
@@ -1707,6 +2559,519 @@ export class NaturalLanguageCommandParser {
   }
 
   /**
+   * Extract formula error-specific parameters
+   */
+  private extractFormulaErrorParameters(text: string, parameters: Record<string, any>): void {
+    // Error types
+    const errorTypes: string[] = [];
+    
+    if (text.includes('#REF') || text.includes('#ССЫЛКА')) {
+      errorTypes.push('#REF!');
+    }
+    if (text.includes('#N/A') || text.includes('#Н/Д')) {
+      errorTypes.push('#N/A');
+    }
+    if (text.includes('#VALUE') || text.includes('#ЗНАЧ')) {
+      errorTypes.push('#VALUE!');
+    }
+    if (text.includes('#DIV') || text.includes('#ДЕЛ')) {
+      errorTypes.push('#DIV/0!');
+    }
+    if (text.includes('#NAME') || text.includes('#ИМЯ')) {
+      errorTypes.push('#NAME?');
+    }
+    if (text.includes('#NUM') || text.includes('#ЧИСЛО')) {
+      parameters.errorTypes = ['#NUM!'];
+    }
+    if (text.includes('#NULL') || text.includes('#НУЛЬ')) {
+      errorTypes.push('#NULL!');
+    }
+
+    if (errorTypes.length > 0) {
+      parameters.errorTypes = errorTypes;
+    } else {
+      parameters.errorTypes = 'all'; // Default: find all errors
+    }
+
+    // Range to search
+    const rangeMatch = text.match(/(?:in|range|диапазон)\s+([a-z]+\d+(?::[a-z]+\d+)?)/i);
+    if (rangeMatch) {
+      parameters.searchRange = rangeMatch[1].toUpperCase();
+    }
+
+    // Action to take
+    if (text.includes('fix') || text.includes('исправь')) {
+      parameters.action = 'fix';
+    } else if (text.includes('delete') || text.includes('удали')) {
+      parameters.action = 'delete';
+    } else if (text.includes('replace') || text.includes('замени')) {
+      parameters.action = 'replace';
+      const replaceMatch = text.match(/(?:replace with|заменить на)\s+['"]?([^'"]+)['"]?/i);
+      if (replaceMatch) {
+        parameters.replaceValue = replaceMatch[1];
+      }
+    } else {
+      parameters.action = 'find'; // Default: just find and report
+    }
+  }
+
+  /**
+   * Extract conditional format-specific parameters
+   */
+  private extractConditionalFormatParameters(text: string, parameters: Record<string, any>): void {
+    // Format type
+    if (text.includes('color scale') || text.includes('цветовая шкала')) {
+      parameters.formatType = 'colorScale';
+      if (text.includes('two color') || text.includes('2 color') || text.includes('двухцветн')) {
+        parameters.colorCount = 2;
+      } else if (text.includes('three color') || text.includes('3 color') || text.includes('трехцветн')) {
+        parameters.colorCount = 3;
+      }
+    } else if (text.includes('data bar') || text.includes('гистограмма')) {
+      parameters.formatType = 'dataBar';
+      if (text.includes('gradient') || text.includes('градиент')) {
+        parameters.barStyle = 'gradient';
+      } else {
+        parameters.barStyle = 'solid';
+      }
+    } else if (text.includes('icon set') || text.includes('набор значков')) {
+      parameters.formatType = 'iconSet';
+      if (text.includes('3 arrow') || text.includes('3 стрелки')) {
+        parameters.iconStyle = '3Arrows';
+      } else if (text.includes('3 traffic light') || text.includes('3 светофора')) {
+        parameters.iconStyle = '3TrafficLights';
+      } else if (text.includes('5 rating') || text.includes('5 звезд')) {
+        parameters.iconStyle = '5Rating';
+      }
+    } else if (text.includes('highlight') || text.includes('выделить')) {
+      parameters.formatType = 'highlight';
+      
+      // Condition
+      if (text.includes('greater than') || text.includes('больше')) {
+        parameters.operator = 'greaterThan';
+        const valueMatch = text.match(/(?:than|чем)\s+(\d+)/i);
+        if (valueMatch) parameters.value = parseFloat(valueMatch[1]);
+      } else if (text.includes('less than') || text.includes('меньше')) {
+        parameters.operator = 'lessThan';
+        const valueMatch = text.match(/(?:than|чем)\s+(\d+)/i);
+        if (valueMatch) parameters.value = parseFloat(valueMatch[1]);
+      } else if (text.includes('between') || text.includes('между')) {
+        parameters.operator = 'between';
+        const rangeMatch = text.match(/(\d+)\s*(?:and|и)\s*(\d+)/i);
+        if (rangeMatch) {
+          parameters.value = parseFloat(rangeMatch[1]);
+          parameters.value2 = parseFloat(rangeMatch[2]);
+        }
+      } else if (text.includes('equal to') || text.includes('равно')) {
+        parameters.operator = 'equal';
+        const valueMatch = text.match(/(?:to|)\s+['"]?([^'"]+)['"]?/i);
+        if (valueMatch) parameters.value = valueMatch[1];
+      } else if (text.includes('duplicate') || text.includes('дубликат')) {
+        parameters.operator = 'duplicate';
+      } else if (text.includes('unique') || text.includes('уникальн')) {
+        parameters.operator = 'unique';
+      } else if (text.includes('top') || text.includes('верхни')) {
+        parameters.operator = 'top';
+        const nMatch = text.match(/top\s+(\d+)/i);
+        if (nMatch) parameters.value = parseInt(nMatch[1]);
+      } else if (text.includes('bottom') || text.includes('нижни')) {
+        parameters.operator = 'bottom';
+        const nMatch = text.match(/bottom\s+(\d+)/i);
+        if (nMatch) parameters.value = parseInt(nMatch[1]);
+      }
+    } else if (text.includes('formula') || text.includes('формула')) {
+      parameters.formatType = 'formula';
+      const formulaMatch = text.match(/(?:formula|формула)\s+['"]([^'"]+)['"]/i);
+      if (formulaMatch) {
+        parameters.formula = formulaMatch[1];
+      }
+    }
+
+    // Format to apply
+    if (text.includes('fill') || text.includes('заливк')) {
+      const colorMatch = text.match(/(?:fill|заливк)\s+(\w+)/i);
+      if (colorMatch) parameters.fillColor = colorMatch[1];
+    }
+    if (text.includes('font color') || text.includes('цвет шрифт')) {
+      const colorMatch = text.match(/(?:font color|цвет шрифт)\s+(\w+)/i);
+      if (colorMatch) parameters.fontColor = colorMatch[1];
+    }
+    if (text.includes('bold') || text.includes('жирн')) {
+      parameters.bold = true;
+    }
+    if (text.includes('italic') || text.includes('курсив')) {
+      parameters.italic = true;
+    }
+    if (text.includes('border') || text.includes('границ')) {
+      parameters.border = true;
+    }
+
+    // Range to apply
+    const rangeMatch = text.match(/(?:to|на|range|диапазон)\s+([a-z]+\d+(?::[a-z]+\d+)?)/i);
+    if (rangeMatch) {
+      parameters.range = rangeMatch[1].toUpperCase();
+    }
+
+    // Clear existing rules
+    if (text.includes('clear existing') || text.includes('убрать существующие')) {
+      parameters.clearExisting = true;
+    }
+  }
+
+  /**
+   * Extract chart axis-specific parameters
+   */
+  private extractChartAxisParameters(text: string, parameters: Record<string, any>): void {
+    // Which axis
+    if (text.includes('x-axis') || text.includes('horizontal') || text.includes('ось x') || text.includes('горизонтальн')) {
+      parameters.axis = 'x';
+    } else if (text.includes('y-axis') || text.includes('vertical') || text.includes('ось y') || text.includes('вертикальн')) {
+      parameters.axis = 'y';
+    } else if (text.includes('secondary') || text.includes('вторичн')) {
+      parameters.axis = 'secondary';
+    } else {
+      parameters.axis = 'y'; // Default to Y-axis (most common)
+    }
+
+    // Axis title
+    const titleMatch = text.match(/(?:title|название|label|подпись)\s+['"]([^'"]+)['"]/i);
+    if (titleMatch) {
+      parameters.title = titleMatch[1];
+    }
+
+    // Axis scale
+    if (text.includes('logarithmic') || text.includes('логарифмическ')) {
+      parameters.scale = 'logarithmic';
+    } else if (text.includes('linear') || text.includes('линейн')) {
+      parameters.scale = 'linear';
+    }
+
+    // Min/Max values
+    const minMatch = text.match(/(?:min|minimum|минимум)\s+(?:value|значение)?\s*(\d+)/i);
+    if (minMatch) {
+      parameters.minValue = parseFloat(minMatch[1]);
+    }
+    const maxMatch = text.match(/(?:max|maximum|максимум)\s+(?:value|значение)?\s*(\d+)/i);
+    if (maxMatch) {
+      parameters.maxValue = parseFloat(maxMatch[1]);
+    }
+
+    // Number format
+    if (text.includes('currency') || text.includes('валют')) {
+      parameters.numberFormat = '$#,##0';
+    } else if (text.includes('percentage') || text.includes('%') || text.includes('процент')) {
+      parameters.numberFormat = '0%';
+    } else if (text.includes('date') || text.includes('дата')) {
+      parameters.numberFormat = 'mmm-yy';
+    } else if (text.includes('number') || text.includes('число')) {
+      parameters.numberFormat = '#,##0';
+    }
+
+    // Gridlines
+    if (text.includes('gridline') || text.includes('сетка')) {
+      if (text.includes('remove') || text.includes('hide') || text.includes('убрать') || text.includes('скрыть')) {
+        parameters.showGridlines = false;
+      } else if (text.includes('show') || text.includes('показать')) {
+        parameters.showGridlines = true;
+      }
+      if (text.includes('minor') || text.includes('вспомогательн')) {
+        parameters.gridlineType = 'minor';
+      } else {
+        parameters.gridlineType = 'major';
+      }
+    }
+
+    // Tick marks
+    if (text.includes('tick') || text.includes('делени')) {
+      if (text.includes('inside') || text.includes('внутр')) {
+        parameters.tickPosition = 'inside';
+      } else if (text.includes('outside') || text.includes('снаруж')) {
+        parameters.tickPosition = 'outside';
+      } else if (text.includes('cross') || text.includes('пересека')) {
+        parameters.tickPosition = 'cross';
+      } else if (text.includes('none') || text.includes('нет')) {
+        parameters.tickPosition = 'none';
+      }
+    }
+
+    // Axis position
+    if (text.includes('reverse') || text.includes('обратн')) {
+      parameters.reversed = true;
+    }
+
+    // Label angle
+    const angleMatch = text.match(/(?:angle|наклон)\s+(\d+)/i);
+    if (angleMatch) {
+      parameters.labelAngle = parseInt(angleMatch[1]);
+    }
+  }
+
+  /**
+   * Extract data model-specific parameters
+   */
+  private extractDataModelParameters(text: string, parameters: Record<string, any>): void {
+    // Operation type
+    if (text.includes('add table') || text.includes('добавить таблиц')) {
+      parameters.operation = 'addTable';
+      const tableMatch = text.match(/(?:add table|добавить таблицу)\s+['"]?([^'"]+?)['"]?/i);
+      if (tableMatch) {
+        parameters.tableName = tableMatch[1].trim();
+      }
+    } else if (text.includes('remove table') || text.includes('удалить таблиц')) {
+      parameters.operation = 'removeTable';
+    } else if (text.includes('add column') || text.includes('добавить столбец')) {
+      parameters.operation = 'addColumn';
+    } else if (text.includes('create measure') || text.includes('создать меру')) {
+      parameters.operation = 'createMeasure';
+    } else if (text.includes('create relationship') || text.includes('создать связь')) {
+      parameters.operation = 'createRelationship';
+    } else if (text.includes('show') || text.includes('list') || text.includes('показать')) {
+      parameters.operation = 'show';
+    } else if (text.includes('optimize') || text.includes('оптимизировать')) {
+      parameters.operation = 'optimize';
+    }
+
+    // Tables involved
+    const tablePattern = /(?:table|таблица)\s+['"]?([^'"]+?)['"]?/gi;
+    const tables: string[] = [];
+    let match;
+    while ((match = tablePattern.exec(text)) !== null) {
+      tables.push(match[1].trim());
+    }
+    if (tables.length > 0) {
+      parameters.tables = tables;
+    }
+
+    // Relationship details
+    if (text.includes('relationship') || text.includes('связь')) {
+      const relMatch = text.match(/(?:between|между)\s+['"]?([^'"]+?)['"]?\s+(?:and|и)\s+['"]?([^'"]+?)['"]?/i);
+      if (relMatch) {
+        parameters.fromTable = relMatch[1].trim();
+        parameters.toTable = relMatch[2].trim();
+      }
+      
+      if (text.includes('one to many') || text.includes('один ко многим')) {
+        parameters.cardinality = 'oneToMany';
+      } else if (text.includes('many to one') || text.includes('многие к одному')) {
+        parameters.cardinality = 'manyToOne';
+      } else if (text.includes('one to one') || text.includes('один к одному')) {
+        parameters.cardinality = 'oneToOne';
+      }
+    }
+
+    // Column to add
+    const columnMatch = text.match(/(?:column|столбец)\s+['"]?([^'"]+?)['"]?/i);
+    if (columnMatch) {
+      parameters.columnName = columnMatch[1].trim();
+    }
+
+    // DAX expression
+    const daxMatch = text.match(/(?:dax|expression|выражение)\s+['"]([^'"]+)['"]/i);
+    if (daxMatch) {
+      parameters.daxExpression = daxMatch[1];
+    }
+  }
+
+  /**
+   * Extract dashboard-specific parameters
+   */
+  private extractDashboardParameters(text: string, parameters: Record<string, any>): void {
+    // Dashboard name
+    const nameMatch = text.match(/(?:named|called|назвать|с именем)\s+['"]([^'"]+)['"]/i);
+    if (nameMatch) {
+      parameters.dashboardName = nameMatch[1];
+    }
+
+    // Dashboard type
+    if (text.includes('kpi') || text.includes('кпи')) {
+      parameters.dashboardType = 'kpi';
+    } else if (text.includes('executive') || text.includes('руководств')) {
+      parameters.dashboardType = 'executive';
+    } else if (text.includes('sales') || text.includes('продаж')) {
+      parameters.dashboardType = 'sales';
+    } else if (text.includes('financial') || text.includes('финансов')) {
+      parameters.dashboardType = 'financial';
+    } else if (text.includes('operational') || text.includes('операционн')) {
+      parameters.dashboardType = 'operational';
+    } else {
+      parameters.dashboardType = 'general';
+    }
+
+    // Components to add
+    const components: string[] = [];
+    if (text.includes('chart') || text.includes('диаграмм')) {
+      components.push('chart');
+    }
+    if (text.includes('pivot') || text.includes('сводн')) {
+      components.push('pivot');
+    }
+    if (text.includes('kpi') || text.includes('кпи') || text.includes('metric')) {
+      components.push('kpi');
+    }
+    if (text.includes('slicer') || text.includes('срез') || text.includes('filter')) {
+      components.push('slicer');
+    }
+    if (text.includes('table') || text.includes('таблиц')) {
+      components.push('table');
+    }
+    if (text.includes('image') || text.includes('логотип') || text.includes('logo')) {
+      components.push('image');
+    }
+    if (components.length > 0) {
+      parameters.components = components;
+    }
+
+    // Layout
+    if (text.includes('grid') || text.includes('сетк')) {
+      parameters.layout = 'grid';
+    } else if (text.includes('freeform') || text.includes('свободн')) {
+      parameters.layout = 'freeform';
+    } else {
+      parameters.layout = 'grid';
+    }
+
+    // Data sources
+    const sourcePattern = /(?:from|using|из|используя)\s+['"]?([^'"]+?)['"]?/gi;
+    const sources: string[] = [];
+    while ((match = sourcePattern.exec(text)) !== null) {
+      sources.push(match[1].trim());
+    }
+    if (sources.length > 0) {
+      parameters.dataSources = sources;
+    }
+
+    // Auto-refresh
+    if (text.includes('auto refresh') || text.includes('автообновление')) {
+      parameters.autoRefresh = true;
+      const intervalMatch = text.match(/every\s+(\d+)\s*(minute|hour|минут|час)/i);
+      if (intervalMatch) {
+        parameters.refreshInterval = {
+          value: parseInt(intervalMatch[1]),
+          unit: intervalMatch[2].toLowerCase()
+        };
+      }
+    }
+
+    // Theme
+    if (text.includes('dark') || text.includes('темн')) {
+      parameters.theme = 'dark';
+    } else if (text.includes('light') || text.includes('светл')) {
+      parameters.theme = 'light';
+    }
+  }
+
+  /**
+   * Extract template-specific parameters
+   */
+  private extractTemplateParameters(text: string, parameters: Record<string, any>): void {
+    // Template name
+    const nameMatch = text.match(/(?:named|called|template|шаблон)\s+['"]?([^'"]+?)['"]?/i);
+    if (nameMatch) {
+      parameters.templateName = nameMatch[1].trim();
+    }
+
+    // Template type
+    if (text.includes('report') || text.includes('отчет')) {
+      parameters.templateType = 'report';
+    } else if (text.includes('budget') || text.includes('бюджет')) {
+      parameters.templateType = 'budget';
+    } else if (text.includes('invoice') || text.includes('счет')) {
+      parameters.templateType = 'invoice';
+    } else if (text.includes('schedule') || text.includes('расписан')) {
+      parameters.templateType = 'schedule';
+    } else if (text.includes('tracker') || text.includes('трекер')) {
+      parameters.templateType = 'tracker';
+    } else {
+      parameters.templateType = 'general';
+    }
+
+    // What to include
+    const includePattern = /(?:include|with|включить|с)\s+['"]?([^'"]+?)['"]?/gi;
+    const includes: string[] = [];
+    while ((match = includePattern.exec(text)) !== null) {
+      includes.push(match[1].trim());
+    }
+    if (includes.length > 0) {
+      parameters.includes = includes;
+    }
+
+    // Save location
+    const locationMatch = text.match(/(?:save to|location|сохранить в)\s+['"]?([^'"]+?)['"]?/i);
+    if (locationMatch) {
+      parameters.saveLocation = locationMatch[1].trim();
+    }
+
+    // Template format
+    if (text.includes('xltx') || text.includes('template format')) {
+      parameters.format = 'xltx';
+    } else if (text.includes('xltm') || text.includes('macro template')) {
+      parameters.format = 'xltm';
+    }
+  }
+
+  /**
+   * Extract theme-specific parameters
+   */
+  private extractThemeParameters(text: string, parameters: Record<string, any>): void {
+    // Theme name
+    const nameMatch = text.match(/(?:apply|use|set|применить|использовать|установить)\s+['"]?([^'"]+?)['"]?\s+theme/i);
+    if (nameMatch) {
+      parameters.themeName = nameMatch[1].trim();
+    }
+
+    // Built-in themes
+    const builtInThemes = [
+      'office', 'facet', 'ion', 'organic', 'retro', 'slice',
+      'blue', 'green', 'orange', 'red', 'purple', 'gray'
+    ];
+    for (const theme of builtInThemes) {
+      if (text.includes(theme)) {
+        parameters.themeName = theme;
+        break;
+      }
+    }
+
+    // Custom colors
+    const primaryMatch = text.match(/(?:primary|main|основной)\s+(?:color|цвет)\s+(\w+)/i);
+    if (primaryMatch) {
+      parameters.primaryColor = primaryMatch[1];
+    }
+    const secondaryMatch = text.match(/(?:secondary|дополнительный)\s+(?:color|цвет)\s+(\w+)/i);
+    if (secondaryMatch) {
+      parameters.secondaryColor = secondaryMatch[1];
+    }
+    const accentMatch = text.match(/(?:accent|акцент)\s+(\d+)\s+(?:color|цвет)\s+(\w+)/i);
+    if (accentMatch) {
+      parameters.accentColors = parameters.accentColors || {};
+      parameters.accentColors[`accent${accentMatch[1]}`] = accentMatch[2];
+    }
+
+    // Fonts
+    const headingFontMatch = text.match(/(?:heading|заголовок)\s+(?:font|шрифт)\s+['"]?([^'"]+?)['"]?/i);
+    if (headingFontMatch) {
+      parameters.headingFont = headingFontMatch[1].trim();
+    }
+    const bodyFontMatch = text.match(/(?:body|основной|текст)\s+(?:font|шрифт)\s+['"]?([^'"]+?)['"]?/i);
+    if (bodyFontMatch) {
+      parameters.bodyFont = bodyFontMatch[1].trim();
+    }
+
+    // Effects
+    if (text.includes('shadow') || text.includes('тень')) {
+      parameters.effects = parameters.effects || [];
+      parameters.effects.push('shadow');
+    }
+    if (text.includes('glow') || text.includes('свечение')) {
+      parameters.effects = parameters.effects || [];
+      parameters.effects.push('glow');
+    }
+    if (text.includes('reflection') || text.includes('отражение')) {
+      parameters.effects = parameters.effects || [];
+      parameters.effects.push('reflection');
+    }
+  }
+
+  /**
    * Extract constraints from the command
    */
   private extractConstraints(text: string): string[] {
@@ -2048,278 +3413,6 @@ export class NaturalLanguageCommandParser {
           'Создай макрос для форматирования выделенного диапазона',
           'Объясни VBA код в Module1',
           'Запиши макрос для очистки данных'
-        ]
-      },
-      // New high-priority targets
-      'row': {
-        'en': [
-          'Insert 3 rows above row 5',
-          'Delete rows 10 through 15',
-          'Hide rows 20 to 25',
-          'Resize row 5 to height 30',
-          'Group rows 5 to 10'
-        ],
-        'ru': [
-          'Вставь 3 строки выше строки 5',
-          'Удали строки с 10 по 15',
-          'Скрой строки с 20 по 25',
-          'Измени высоту строки 5 до 30',
-          'Сгруппируй строки с 5 по 10'
-        ]
-      },
-      'column': {
-        'en': [
-          'Insert a column before column B',
-          'Delete column D',
-          'Hide columns C through E',
-          'Resize column A to width 15',
-          'Move column B to position D'
-        ],
-        'ru': [
-          'Вставь столбец перед столбцом B',
-          'Удали столбец D',
-          'Скрой столбцы с C по E',
-          'Измени ширину столбца A до 15',
-          'Перемести столбец B в позицию D'
-        ]
-      },
-      'cell': {
-        'en': [
-          'Format cell A1 as currency',
-          'Add comment to cell B5',
-          'Link cell C10 to Sheet2!A1',
-          'Clear cell D20'
-        ],
-        'ru': [
-          'Отформатируй ячейку A1 как валюту',
-          'Добавь комментарий к ячейке B5',
-          'Свяжи ячейку C10 с Sheet2!A1',
-          'Очисти ячейку D20'
-        ]
-      },
-      'style': {
-        'en': [
-          'Apply Heading 1 style to row 1',
-          'Create a custom style called Highlight',
-          'Copy style from cell A1 to B1',
-          'List all available styles'
-        ],
-        'ru': [
-          'Примени стиль Заголовок 1 к строке 1',
-          'Создай пользовательский стиль Выделение',
-          'Скопируй стиль из ячейки A1 в B1',
-          'Покажи все доступные стили'
-        ]
-      },
-      'connection': {
-        'en': [
-          'Create connection to SQL Server database',
-          'Refresh all data connections',
-          'List all external connections',
-          'Remove connection to Database1'
-        ],
-        'ru': [
-          'Создай подключение к базе данных SQL Server',
-          'Обнови все подключения к данным',
-          'Покажи все внешние подключения',
-          'Удали подключение к Database1'
-        ]
-      },
-      'relationship': {
-        'en': [
-          'Create relationship between Sales and Customers tables',
-          'Show all relationships in the data model',
-          'Delete relationship between Tables A and B'
-        ],
-        'ru': [
-          'Создай связь между таблицами Продажи и Клиенты',
-          'Покажи все связи в модели данных',
-          'Удали связь между таблицами A и B'
-        ]
-      },
-      'group': {
-        'en': [
-          'Group rows 5 to 10',
-          'Ungroup all groups',
-          'Collapse group level 2',
-          'Show outline symbols'
-        ],
-        'ru': [
-          'Сгруппируй строки с 5 по 10',
-          'Разгруппируй все группы',
-          'Сверни группу уровня 2',
-          'Покажи символы структуры'
-        ]
-      },
-      'view': {
-        'en': [
-          'Create a view called Print View',
-          'Switch to view Data Entry',
-          'Delete view Old View',
-          'List all views'
-        ],
-        'ru': [
-          'Создай представление Печать',
-          'Переключись на представление Ввод данных',
-          'Удали представление Старое',
-          'Покажи все представления'
-        ]
-      },
-      'scenario': {
-        'en': [
-          'Create scenario Best Case',
-          'Show scenario summary',
-          'Switch to scenario Worst Case',
-          'Merge scenarios from Budget.xlsx'
-        ],
-        'ru': [
-          'Создай сценарий Лучший случай',
-          'Покажи сводку сценариев',
-          'Переключись на сценарий Худший случай',
-          'Объедини сценарии из Budget.xlsx'
-        ]
-      },
-      'goal': {
-        'en': [
-          'Use goal seek to make B10 equal 1000 by changing B5',
-          'Find value for cell C20 to achieve target in D20'
-        ],
-        'ru': [
-          'Используй подбор параметра чтобы сделать B10 равным 1000 изменяя B5',
-          'Найди значение для ячейки C20 чтобы достичь цели в D20'
-        ]
-      },
-      'print': {
-        'en': [
-          'Set print area to A1:F50',
-          'Add header Monthly Report',
-          'Set margins to narrow',
-          'Print preview'
-        ],
-        'ru': [
-          'Установи область печати A1:F50',
-          'Добавь заголовок Ежемесячный отчет',
-          'Установи поля узкие',
-          'Предварительный просмотр печати'
-        ]
-      },
-      // Medium-priority targets
-      'page': {
-        'en': [
-          'Set page orientation to landscape',
-          'Set paper size to A4',
-          'Adjust page breaks',
-          'Set print quality to high'
-        ],
-        'ru': [
-          'Установи ориентацию страницы альбомная',
-          'Установи размер бумаги A4',
-          'Настрой разрывы страниц',
-          'Установи качество печати высокое'
-        ]
-      },
-      'header': {
-        'en': [
-          'Add header Company Name',
-          'Insert page number in header',
-          'Add date to header',
-          'Remove header'
-        ],
-        'ru': [
-          'Добавь заголовок Название компании',
-          'Вставь номер страницы в заголовок',
-          'Добавь дату в заголовок',
-          'Удали заголовок'
-        ]
-      },
-      'footer': {
-        'en': [
-          'Add footer with page numbers',
-          'Insert date in footer',
-          'Add custom text to footer',
-          'Remove footer'
-        ],
-        'ru': [
-          'Добавь нижний колонтитул с номерами страниц',
-          'Вставь дату в нижний колонтитул',
-          'Добавь пользовательский текст в нижний колонтитул',
-          'Удали нижний колонтитул'
-        ]
-      },
-      'outline': {
-        'en': [
-          'Create outline for this data',
-          'Show outline symbols',
-          'Auto outline this range',
-          'Clear outline'
-        ],
-        'ru': [
-          'Создай структуру для этих данных',
-          'Покажи символы структуры',
-          'Автоструктура для этого диапазона',
-          'Очисти структуру'
-        ]
-      },
-      'permission': {
-        'en': [
-          'Protect this sheet with password',
-          'Allow users to edit range A1:B10',
-          'Remove protection from Sheet2',
-          'Set workbook permissions'
-        ],
-        'ru': [
-          'Защити этот лист паролем',
-          'Разреши пользователям редактировать диапазон A1:B10',
-          'Сними защиту с Sheet2',
-          'Установи разрешения книги'
-        ]
-      },
-      'audit': {
-        'en': [
-          'Show change history',
-          'Track changes in this workbook',
-          'Highlight all changes',
-          'Accept/reject changes'
-        ],
-        'ru': [
-          'Покажи историю изменений',
-          'Отслеживай изменения в этой книге',
-          'Выдели все изменения',
-          'Принять/отклонить изменения'
-        ]
-      }
-    };
-          'Create a dropdown list with values Yes, No, Maybe',
-          'Remove data validation from the selected range'
-        ],
-        'ru': [
-          'Установи проверку данных для ввода только чисел в колонку A',
-          'Создай выпадающий список со значениями Да, Нет, Возможно',
-          'Удали проверку данных из выделенного диапазона'
-        ]
-      },
-      'hyperlink': {
-        'en': [
-          'Add a hyperlink to cell A1 linking to https://example.com',
-          'Create a link to Sheet2 cell B5',
-          'Remove all hyperlinks in the selected range'
-        ],
-        'ru': [
-          'Добавь ссылку в ячейку A1 на https://example.com',
-          'Создай ссылку на ячейку B5 листа Лист2',
-          'Удали все ссылки из выделенного диапазона'
-        ]
-      },
-      'macro': {
-        'en': [
-          'Record a macro to format the selected range',
-          'Run the macro called FormatData',
-          'Delete the old macro CleanupData'
-        ],
-        'ru': [
-          'Запиши макрос для форматирования выделенного диапазона',
-          'Запусти макрос ФорматироватьДанные',
-          'Удали старый макрос ОчисткаДанных'
         ]
       },
       // New high-priority targets

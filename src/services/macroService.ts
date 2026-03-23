@@ -25,6 +25,25 @@ export interface MacroAction {
   timestamp: Date;
 }
 
+/** Excel operation for VBA conversion */
+export interface ExcelOperation {
+  type: 'setValue' | 'setFormula' | 'formatCells' | 'copy' | 'paste';
+  address: string;
+  value?: string;
+  formula?: string;
+  bold?: boolean;
+  italic?: boolean;
+  color?: string;
+  fillColor?: string;
+}
+
+/** Macro execution result */
+export interface MacroExecutionResult {
+  success: boolean;
+  error?: string;
+  instructions?: string[];
+}
+
 // Storage key for macro history
 const MACRO_HISTORY_KEY = 'excel_ai_macro_history';
 const MAX_HISTORY_ITEMS = 100;
@@ -80,34 +99,38 @@ export class MacroService {
 
   /**
    * Run an existing macro by name
-   * Note: Direct VBA execution requires the workbook to contain the macro.
-   * This method logs the execution and can trigger workbook-level macros via Excel API.
+   * Attempts to execute via Office.js API or generates instructions
    */
-  async runMacro(macroName: string, parameters?: any[]): Promise<void> {
+  async runMacro(macroName: string, parameters?: any[]): Promise<MacroExecutionResult> {
     const startTime = new Date();
     let success = false;
     let errorMsg: string | undefined;
+    const instructions: string[] = [];
 
     try {
-      // Note: Office.js doesn't provide direct VBA execution API
-      // This would require a custom function in the workbook or COM interop
-      // For now, we log the attempt and track it
-      
+      const macro = await this.getMacro(macroName);
+      if (!macro) {
+        throw new Error(`Macro "${macroName}" not found`);
+      }
+
       logger.info('Attempting to run macro', { macroName, parameters });
-      
-      // Try to execute via Excel's VBA runtime if available
-      await Excel.run(async (context) => {
-        // Note: Office.js doesn't expose runMacro directly
-        // This would require a separate mechanism
-        const workbook = context.workbook;
+
+      // Try to execute as Excel operations if code is available
+      if (macro.code) {
+        const operations = this.parseVbaToOperations(macro.code);
         
-        // Log for debugging
-        logger.debug('Workbook available for macro execution', { workbookName: workbook.name });
-        
-        await context.sync();
-      });
-      
-      success = true;
+        if (operations.length > 0) {
+          // Execute as Excel.js operations
+          await this.executeAsExcelOperations(operations);
+          success = true;
+        } else {
+          // Generate step-by-step instructions
+          instructions.push(...this.generateInstructions(macro));
+        }
+      } else {
+        instructions.push(`Macro "${macroName}" has no code to execute`);
+      }
+
     } catch (error) {
       errorMsg = error instanceof Error ? error.message : String(error);
       logger.error('Failed to run macro', { error: errorMsg, macroName, parameters });
@@ -121,6 +144,148 @@ export class MacroService {
       });
       this.saveHistory();
     }
+
+    return {
+      success,
+      error: errorMsg,
+      instructions
+    };
+  }
+
+  /**
+   * Parse VBA code to Excel operations
+   */
+  private parseVbaToOperations(vbaCode: string): ExcelOperation[] {
+    const operations: ExcelOperation[] = [];
+    const lines = vbaCode.split('\n');
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      // Skip comments
+      if (trimmed.startsWith("'") || trimmed.startsWith("Rem ")) continue;
+
+      // Parse Range().Value =
+      const setValueMatch = trimmed.match(/Range\("([^"]+)"\)\.Value\s*=\s*"([^"]*)"/i);
+      if (setValueMatch) {
+        operations.push({
+          type: 'setValue',
+          address: setValueMatch[1],
+          value: setValueMatch[2]
+        });
+        continue;
+      }
+
+      // Parse Range().Formula =
+      const setFormulaMatch = trimmed.match(/Range\("([^"]+)"\)\.Formula\s*=\s*"([^"]*)"/i);
+      if (setFormulaMatch) {
+        operations.push({
+          type: 'setFormula',
+          address: setFormulaMatch[1],
+          formula: setFormulaMatch[2]
+        });
+        continue;
+      }
+
+      // Parse .Font.Bold = True
+      const boldMatch = trimmed.match(/Range\("([^"]+)"\)\..*\.Font\.Bold\s*=\s*True/i);
+      if (boldMatch) {
+        operations.push({
+          type: 'formatCells',
+          address: boldMatch[1],
+          bold: true
+        });
+        continue;
+      }
+
+      // Parse .Interior.Color =
+      const colorMatch = trimmed.match(/Range\("([^"]+)"\)\..*\.Interior\.Color\s*=\s*(\w+)/i);
+      if (colorMatch) {
+        operations.push({
+          type: 'formatCells',
+          address: colorMatch[1],
+          fillColor: colorMatch[2]
+        });
+        continue;
+      }
+    }
+
+    return operations;
+  }
+
+  /**
+   * Execute operations via Excel.js
+   */
+  private async ExecuteAsExcelOperations(operations: ExcelOperation[]): Promise<void> {
+    await Excel.run(async (context) => {
+      const workbook = context.workbook;
+      const activeSheet = workbook.worksheets.getActiveWorksheet();
+
+      for (const op of operations) {
+        switch (op.type) {
+          case 'setValue':
+            const range = activeSheet.getRange(op.address);
+            range.values = [[op.value]];
+            break;
+          case 'setFormula':
+            const formulaRange = activeSheet.getRange(op.address);
+            formulaRange.formulas = [[op.formula]];
+            break;
+          case 'formatCells':
+            const formatRange = activeSheet.getRange(op.address);
+            if (op.bold) formatRange.format.font.bold = true;
+            if (op.color) formatRange.format.font.color = op.color;
+            if (op.fillColor) formatRange.format.fill.color = op.fillColor;
+            break;
+        }
+      }
+
+      await context.sync();
+    });
+  }
+
+  /**
+   * Generate step-by-step instructions from VBA code
+   */
+  private generateInstructions(macro: Macro): string[] {
+    const instructions: string[] = [];
+    const code = macro.code || '';
+
+    instructions.push(`To run macro "${macro.name}":`);
+    instructions.push('');
+
+    // Parse VBA and convert to instructions
+    const lines = code.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      if (trimmed.startsWith('Range(')) {
+        const match = trimmed.match(/Range\("([^"]+)"\)/);
+        if (match) {
+          instructions.push(`1. Select cell/range: ${match[1]}`);
+        }
+      } else if (trimmed.includes('.Value =')) {
+        const match = trimmed.match(/\.Value\s*=\s*"([^"]*)"/);
+        if (match) {
+          instructions.push(`2. Enter value: "${match[1]}"`);
+        }
+      } else if (trimmed.includes('.Formula =')) {
+        const match = trimmed.match(/\.Formula\s*=\s*"([^"]*)"/);
+        if (match) {
+          instructions.push(`2. Enter formula: ${match[1]}`);
+        }
+      } else if (trimmed.includes('.Font.Bold')) {
+        instructions.push('3. Apply bold formatting');
+      } else if (trimmed.includes('.Interior.Color')) {
+        instructions.push('3. Apply background color');
+      }
+    }
+
+    instructions.push('');
+    instructions.push('Note: Direct VBA execution is not available in Office Add-ins.');
+    instructions.push('These instructions guide you through the steps manually.');
+
+    return instructions;
   }
 
   /**

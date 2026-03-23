@@ -3,6 +3,24 @@
 
 import { logger } from '../utils/logger';
 
+/**
+ * Type for accessing hyperlink property on Range
+ * Office.js doesn't include hyperlink in standard types
+ */
+interface HyperlinkProperty {
+  address: string;
+  textToDisplay?: string;
+  screenTip?: string;
+}
+
+/**
+ * Helper type for Range with hyperlink access
+ * Note: Using intersection type to avoid interface extension conflicts
+ */
+type RangeWithHyperlink = Excel.Range & {
+  hyperlink?: HyperlinkProperty;
+};
+
 export interface Hyperlink {
   cellAddress: string;
   worksheetName: string;
@@ -44,7 +62,8 @@ export class HyperlinkService {
       const range = worksheet.getRange(options.cellAddress);
       
       // Set hyperlink using the range's hyperlink property
-      (range as any).hyperlink = {
+      const rangeWithLink = range as RangeWithHyperlink;
+      rangeWithLink.hyperlink = {
         address: options.url,
         textToDisplay: options.displayText || options.url,
         screenTip: options.screenTip
@@ -136,8 +155,8 @@ export class HyperlinkService {
         ? context.workbook.worksheets.getItem(worksheetName)
         : context.workbook.worksheets.getActiveWorksheet();
       
-      const range = worksheet.getRange(cellAddress);
-      const hyperlink = (range as any).hyperlink;
+      const range = worksheet.getRange(cellAddress) as RangeWithHyperlink;
+      const hyperlink = range.hyperlink;
       
       await context.sync();
       
@@ -192,8 +211,8 @@ export class HyperlinkService {
       for (let row = 0; row < scanRows; row++) {
         for (let col = 0; col < scanCols; col++) {
           try {
-            const cell = range.getCell(row, col);
-            const hyperlink = (cell as any).hyperlink;
+            const cell = range.getCell(row, col) as RangeWithHyperlink;
+            const hyperlink = cell.hyperlink;
             cell.load('address');
             await context.sync();
 
@@ -215,7 +234,7 @@ export class HyperlinkService {
 
       return hyperlinks;
     }).catch((error) => {
-      console.error('Failed to get hyperlinks in range:', error);
+      logger.error('Failed to get hyperlinks in range', undefined, error as Error);
       return [];
     });
   }
@@ -276,8 +295,8 @@ export class HyperlinkService {
       for (let col = 0; col < maxCols; col++) {
         const cellAddress = this.getCellAddress(row, col);
         try {
-          const range = worksheet.getRange(cellAddress);
-          const hyperlink = (range as any).hyperlink;
+          const range = worksheet.getRange(cellAddress) as RangeWithHyperlink;
+          const hyperlink = range.hyperlink;
           await context.sync();
           
           if (hyperlink && hyperlink.address) {
@@ -329,8 +348,9 @@ export class HyperlinkService {
       
       const range = worksheet.getRange(cellAddress);
       
-      // Set hyperlink to null to remove
-      (range as any).hyperlink = null;
+      // Set hyperlink to undefined to remove
+      const rangeWithLink = range as RangeWithHyperlink;
+      (rangeWithLink as { hyperlink: HyperlinkProperty | undefined }).hyperlink = undefined;
       
       await context.sync();
     }).catch((error) => {
@@ -354,7 +374,8 @@ export class HyperlinkService {
       await context.sync();
       
       // Clear hyperlink for entire range
-      (range as any).hyperlink = null;
+      const rangeWithLink = range as RangeWithHyperlink;
+      (rangeWithLink as { hyperlink: HyperlinkProperty | undefined }).hyperlink = undefined;
       
       await context.sync();
       
@@ -377,26 +398,61 @@ export class HyperlinkService {
   }
 
   /**
-   * Validate a URL
+   * Validate a URL - blocks dangerous protocols
+   * @param url - URL to validate
+   * @returns Validation result with error message if invalid
    */
   validateUrl(url: string): { valid: boolean; error?: string } {
     if (!url || url.length === 0) {
       return { valid: false, error: 'URL cannot be empty' };
     }
 
-    // Check for valid URL patterns
-    const urlPatterns = [
+    // Block dangerous protocols
+    const dangerousProtocols = [
+      /^javascript:/i,
+      /^data:/i,
+      /^vbscript:/i,
+      /^file:/i,  // Block file:// for security
+    ];
+
+    if (dangerousProtocols.some(pattern => pattern.test(url))) {
+      return { valid: false, error: 'Protocol not allowed for security reasons' };
+    }
+
+    // Allow safe protocols
+    const safeProtocols = [
       /^https?:\/\//i,       // http/https
       /^mailto:/i,            // email
-      /^file:\/\//i,          // file
       /^#.+!/i,               // internal cell reference
-      /^[A-Za-z]:[/\\]/,      // Windows path
+      /^[A-Za-z]:[/\\]/,      // Windows path (local file)
     ];
     
-    const isValid = urlPatterns.some(pattern => pattern.test(url));
+    const isValid = safeProtocols.some(pattern => pattern.test(url));
 
     if (!isValid) {
-      return { valid: false, error: 'Invalid URL format' };
+      return { valid: false, error: 'Invalid URL format. Use http://, https://, mailto:, or internal cell reference' };
+    }
+
+    // Additional validation for http/https URLs
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      try {
+        const parsed = new URL(url);
+        // Block private/internal IPs
+        const hostname = parsed.hostname;
+        const privateIpPatterns = [
+          /^10\./,
+          /^172\.(1[6-9]|2[0-9]|3[01])\./,
+          /^192\.168\./,
+          /^127\./,
+          /^localhost$/i,
+        ];
+        
+        if (privateIpPatterns.some(pattern => pattern.test(hostname))) {
+          return { valid: false, error: 'Private/internal URLs are not allowed' };
+        }
+      } catch {
+        return { valid: false, error: 'Invalid URL format' };
+      }
     }
 
     return { valid: true };

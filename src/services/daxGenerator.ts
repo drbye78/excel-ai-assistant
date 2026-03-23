@@ -335,6 +335,156 @@ RETURN
       warnings.push('Replace "Value" with your actual filter value');
     }
 
+    // Moving average / Rolling average
+    else if (desc.includes('moving average') || desc.includes('rolling average') || desc.includes('ma')) {
+      const periodMatch = desc.match(/(\d+)\s*(day|week|month|period)/i);
+      const period = periodMatch ? parseInt(periodMatch[1]) : 7;
+      const periodType = periodMatch ? periodMatch[2].toLowerCase() : 'day';
+      
+      measureName = `${period}-${periodType} Moving Average ${columnName}`;
+      expression = `AVERAGEX(
+    DATESINPERIOD('${dateTable}'[${dateColumn}], LASTDATE('${dateTable}'[${dateColumn}]), -${period}, ${periodType.toUpperCase()}),
+    CALCULATE(SUM('${tableName}'[${columnName}]))
+)`;
+      explanation = `Calculates the ${period}-${periodType} moving average of ${columnName}`;
+      confidence = 'high';
+    }
+
+    // Percentile
+    else if (desc.includes('percentile')) {
+      const percentileMatch = desc.match(/(\d+)(st|nd|rd|th)?\s*percentile/i);
+      const percentile = percentileMatch ? parseInt(percentileMatch[1]) : 50;
+      
+      measureName = `${columnName} ${percentile}th Percentile`;
+      expression = `PERCENTILE.INC('${tableName}'[${columnName}], ${percentile / 100})`;
+      explanation = `Calculates the ${percentile}th percentile of ${columnName}`;
+      confidence = 'high';
+    }
+
+    // Rank
+    else if (desc.includes('rank')) {
+      measureName = `${columnName} Rank`;
+      expression = `RANKX(ALL('${tableName}'), SUM('${tableName}'[${columnName}]), , DESC)`;
+      explanation = `Ranks rows by ${columnName} in descending order`;
+      confidence = 'high';
+    }
+
+    // Top N
+    else if (desc.includes('top ')) {
+      const nMatch = desc.match(/top\s+(\d+)/i);
+      const n = nMatch ? parseInt(nMatch[1]) : 10;
+      
+      measureName = `Top ${n} ${columnName}`;
+      expression = `CALCULATE(
+    SUM('${tableName}'[${columnName}]),
+    TOPN(${n}, ALL('${tableName}'), SUM('${tableName}'[${columnName}]), DESC)
+)`;
+      explanation = `Sum of top ${n} values of ${columnName}`;
+      confidence = 'high';
+    }
+
+    // Bottom N
+    else if (desc.includes('bottom ')) {
+      const nMatch = desc.match(/bottom\s+(\d+)/i);
+      const n = nMatch ? parseInt(nMatch[1]) : 10;
+      
+      measureName = `Bottom ${n} ${columnName}`;
+      expression = `CALCULATE(
+    SUM('${tableName}'[${columnName}]),
+    TOPN(${n}, ALL('${tableName}'), SUM('${tableName}'[${columnName}]), ASC)
+)`;
+      explanation = `Sum of bottom ${n} values of ${columnName}`;
+      confidence = 'high';
+    }
+
+    // Weighted average
+    else if (desc.includes('weighted average') || desc.includes('weighted mean')) {
+      const weightMatch = desc.match(/(?:by|using|with)\s+(\w+)/i);
+      const weightColumn = weightMatch ? weightMatch[1] : 'Weight';
+      
+      measureName = `Weighted Average ${columnName}`;
+      expression = `DIVIDE(
+    SUMX('${tableName}', '${tableName}'[${columnName}] * '${tableName}'[${weightColumn}]),
+    SUM('${tableName}'[${weightColumn}])
+)`;
+      explanation = `Calculates weighted average of ${columnName} using ${weightColumn} as weight`;
+      confidence = 'high';
+      warnings.push(`Ensure column '${weightColumn}' exists in table '${tableName}'`);
+    }
+
+    // Standard deviation
+    else if (desc.includes('standard deviation') || desc.includes('std dev') || desc.includes('stdev')) {
+      measureName = `${columnName} StdDev`;
+      expression = `STDEV.P('${tableName}'[${columnName}])`;
+      explanation = `Population standard deviation of ${columnName}`;
+      confidence = 'high';
+    }
+
+    // Sample standard deviation
+    else if (desc.includes('sample standard deviation') || desc.includes('sample std dev')) {
+      measureName = `${columnName} Sample StdDev`;
+      expression = `STDEV.S('${tableName}'[${columnName}])`;
+      explanation = `Sample standard deviation of ${columnName}`;
+      confidence = 'high';
+    }
+
+    // Variance
+    else if (desc.includes('variance') || desc.includes('var ')) {
+      measureName = `${columnName} Variance`;
+      expression = `VAR.P('${tableName}'[${columnName}])`;
+      explanation = `Population variance of ${columnName}`;
+      confidence = 'high';
+    }
+
+    // Median
+    else if (desc.includes('median')) {
+      measureName = `${columnName} Median`;
+      expression = `MEDIAN('${tableName}'[${columnName}])`;
+      explanation = `Median value of ${columnName}`;
+      confidence = 'high';
+    }
+
+    // Month over month
+    else if (desc.includes('month over month') || desc.includes('mom') || desc.includes('monthly change')) {
+      measureName = `${columnName} MoM`;
+      expression = `VAR Current = SUM('${tableName}'[${columnName}])
+VAR Prior = CALCULATE(SUM('${tableName}'[${columnName}]), DATEADD('${dateTable}'[${dateColumn}], -1, MONTH))
+RETURN
+    DIVIDE(Current - Prior, Prior, 0)`;
+      explanation = `Month-over-month percentage change for ${columnName}`;
+      confidence = 'high';
+    }
+
+    // Quarter over quarter
+    else if (desc.includes('quarter over quarter') || desc.includes('qoq')) {
+      measureName = `${columnName} QoQ`;
+      expression = `VAR Current = SUM('${tableName}'[${columnName}])
+VAR Prior = CALCULATE(SUM('${tableName}'[${columnName}]), DATEADD('${dateTable}'[${dateColumn}], -1, QUARTER))
+RETURN
+    DIVIDE(Current - Prior, Prior, 0)`;
+      explanation = `Quarter-over-quarter percentage change for ${columnName}`;
+      confidence = 'high';
+    }
+
+    // Difference from
+    else if (desc.includes('difference from') || desc.includes('diff from')) {
+      const refMatch = desc.match(/difference from\s+(\w+)/i);
+      const refValue = refMatch ? refMatch[1] : 'average';
+      
+      measureName = `${columnName} Diff from ${refValue}`;
+      if (refValue === 'average' || refValue === 'mean') {
+        expression = `SUM('${tableName}'[${columnName}]) - AVERAGE('${tableName}'[${columnName}])`;
+      } else if (refValue === 'max' || refValue === 'maximum') {
+        expression = `SUM('${tableName}'[${columnName}]) - MAX('${tableName}'[${columnName}])`;
+      } else if (refValue === 'min' || refValue === 'minimum') {
+        expression = `SUM('${tableName}'[${columnName}]) - MIN('${tableName}'[${columnName}])`;
+      } else {
+        expression = `SUM('${tableName}'[${columnName}]) - [${refValue}]`;
+      }
+      explanation = `Difference of ${columnName} from ${refValue}`;
+      confidence = 'medium';
+    }
+
     // Default fallback
     else {
       measureName = `${columnName} Total`;
